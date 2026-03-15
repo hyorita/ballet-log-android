@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ballet Log</string>
+
+    <!-- Navigation -->
+    <string name="nav_log">Log</string>
+    <string name="nav_notes">Notes</string>
+    <string name="nav_history">History</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">Home</string>
+    <string name="record_class">Record Class</string>
+    <string name="today">Today</string>
+    <string name="recent">Recent</string>
+    <string name="favorites">Favorites</string>
+    <string name="no_classes_logged_yet">No classes logged yet</string>
+    <string name="tap_record_class">Tap \"Record Class\" after your next barre</string>
+
+    <!-- Editor Screen -->
+    <string name="new_class">New Class</string>
+    <string name="edit_class">Edit Class</string>
+    <string name="save">Save</string>
+    <string name="date">Date</string>
+    <string name="barre">Barre</string>
+    <string name="center">Center</string>
+    <string name="photos">Photos</string>
+    <string name="step_name">Step name</string>
+    <string name="combination_notes">Combination notes...</string>
+    <string name="add_step">Add Step</string>
+    <string name="notes_label">Notes</string>
+    <string name="class_notes">Class notes...</string>
+    <string name="youtube_url">YouTube URL</string>
+    <string name="find_ballet_workout">Find Ballet Workout</string>
+    <string name="ballet_workout_found">Ballet Workout Found ✓</string>
+
+    <!-- Detail Screen -->
+    <string name="ballet_workout">Ballet Workout</string>
+    <string name="duration">Duration</string>
+    <string name="active_cal">Active Cal</string>
+    <string name="avg_bpm">Avg BPM</string>
+    <string name="max_bpm">Max BPM</string>
+    <string name="no_steps_recorded">No steps recorded</string>
+    <string name="music">Music</string>
+    <string name="delete_class_title">Delete Class?</string>
+    <string name="delete_class_message">This class record will be permanently deleted.</string>
+    <string name="delete">Delete</string>
+    <string name="cancel">Cancel</string>
+
+    <!-- Notes Screen -->
+    <string name="new_note">New Note</string>
+    <string name="edit_note">Edit Note</string>
+    <string name="no_notes_yet">No notes yet</string>
+    <string name="tap_new_note">Tap \"New Note\" to jot something down</string>
+    <string name="search">Search</string>
+    <string name="no_results">No results</string>
+    <string name="what_to_remember">What do you want to remember?</string>
+    <string name="youtube_instagram_link">YouTube, Instagram link...</string>
+    <string name="link_to_class">Link to Class</string>
+    <string name="linked_class">Linked Class</string>
+    <string name="select_class">Select Class</string>
+    <string name="select_a_class_optional">Select a class (optional)</string>
+    <string name="delete_note_title">Delete this note?</string>
+    <string name="delete_note_message">This note will be permanently deleted.</string>
+    <string name="reference_link">Reference Link</string>
+    <string name="tags">Tags</string>
+
+    <!-- History Screen -->
+    <string name="classes">Classes</string>
+    <string name="no_classes_on_this_day">No classes on this day</string>
+
+    <!-- Alerts -->
+    <string name="leave_page">Leave the page?</string>
+    <string name="changes_not_saved">Changes you made will not be saved.</string>
+    <string name="discard">Discard</string>
+    <string name="ok">OK</string>
+    <string name="done">Done</string>
+    <string name="no_workout_found">No Workout Found</string>
+    <string name="no_workout_found_message">No workout data was found for this date in Health Connect.</string>
+
+    <!-- Splash -->
+    <string name="splash_subtitle">Let\'s start with pliés</string>
+
+    <!-- Step names (Barre) -->
+    <string name="step_plie">Plié</string>
+    <string name="step_slow_tendu">Slow tendu</string>
+    <string name="step_tendu">Tendu</string>
+    <string name="step_tendu_jete">Tendu jeté</string>
+    <string name="step_ronds_de_jambe_a_terre">Ronds de jambe à terre</string>
+    <string name="step_fondu">Fondu</string>
+    <string name="step_frappe">Frappé</string>
+    <string name="step_adagio">Adagio</string>
+    <string name="step_developpe">Développé</string>
+    <string name="step_grand_battements">Grand battements</string>
+    <string name="step_ronds_de_jambe_en_l_air">Ronds de jambe en l\'air</string>
+
+    <!-- Step names (Center) -->
+    <string name="step_waltz">Waltz</string>
+    <string name="step_allegro_1">Allegro 1 (Sautés)</string>
+    <string name="step_allegro_2">Allegro 2 (Assemblé)</string>
+    <string name="step_allegro_3">Allegro 3 (Jetés)</string>
+    <string name="step_medium_allegro">Medium allegro</string>
+    <string name="step_grand_allegro">Grand allegro</string>
+</resources>
