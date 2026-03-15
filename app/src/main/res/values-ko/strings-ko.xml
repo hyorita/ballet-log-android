@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Ballet Log</string>
+
+    <!-- Navigation -->
+    <string name="nav_log">로그</string>
+    <string name="nav_notes">노트</string>
+    <string name="nav_history">기록</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">홈</string>
+    <string name="record_class">수업 기록하기</string>
+    <string name="today">오늘</string>
+    <string name="recent">최근</string>
+    <string name="favorites">즐겨찾기</string>
+    <string name="no_classes_logged_yet">아직 기록된 수업이 없어요</string>
+    <string name="tap_record_class">\"수업 기록하기\"를 눌러 발레일지를 작성하세요</string>
+
+    <!-- Editor Screen -->
+    <string name="new_class">새 수업</string>
+    <string name="edit_class">편집하기</string>
+    <string name="save">저장하기</string>
+    <string name="date">날짜</string>
+    <string name="barre">바</string>
+    <string name="center">센터</string>
+    <string name="photos">사진</string>
+    <string name="step_name">동작 이름</string>
+    <string name="combination_notes">콤비네이션 메모...</string>
+    <string name="add_step">동작 추가</string>
+    <string name="notes_label">노트</string>
+    <string name="class_notes">수업 메모...</string>
+    <string name="youtube_url">YouTube URL</string>
+    <string name="find_ballet_workout">발레 워크아웃 불러오기</string>
+    <string name="ballet_workout_found">발레 워크아웃 찾음 ✓</string>
+
+    <!-- Detail Screen -->
+    <string name="ballet_workout">발레</string>
+    <string name="duration">시간</string>
+    <string name="active_cal">소모 칼로리</string>
+    <string name="avg_bpm">평균 심박수</string>
+    <string name="max_bpm">최대 심박수</string>
+    <string name="no_steps_recorded">기록된 동작이 없어요</string>
+    <string name="music">음악</string>
+    <string name="delete_class_title">수업 기록 삭제</string>
+    <string name="delete_class_message">이 수업 기록을 삭제할까요?</string>
+    <string name="delete">삭제</string>
+    <string name="cancel">취소</string>
+
+    <!-- Notes Screen -->
+    <string name="new_note">새 메모</string>
+    <string name="edit_note">메모 편집</string>
+    <string name="no_notes_yet">아직 메모가 없어요</string>
+    <string name="tap_new_note">\"새 메모\"를 눌러 기록해보세요</string>
+    <string name="search">검색</string>
+    <string name="no_results">결과 없음</string>
+    <string name="what_to_remember">어떤걸 기억하고 싶으세요?</string>
+    <string name="youtube_instagram_link">YouTube, Instagram 링크...</string>
+    <string name="link_to_class">수업 연결</string>
+    <string name="linked_class">연결된 수업</string>
+    <string name="select_class">수업 선택</string>
+    <string name="select_a_class_optional">수업 선택 (선택사항)</string>
+    <string name="delete_note_title">이 메모를 삭제할까요?</string>
+    <string name="delete_note_message">이 메모가 영구적으로 삭제돼요.</string>
+    <string name="reference_link">참고 링크</string>
+    <string name="tags">태그</string>
+
+    <!-- History Screen -->
+    <string name="classes">수업</string>
+    <string name="no_classes_on_this_day">이 날에 수업이 없어요</string>
+
+    <!-- Alerts -->
+    <string name="leave_page">페이지를 나가시겠어요?</string>
+    <string name="changes_not_saved">변경 사항이 저장되지 않아요.</string>
+    <string name="discard">버리기</string>
+    <string name="ok">확인</string>
+    <string name="done">완료</string>
+    <string name="no_workout_found">워크아웃을 찾을 수 없음</string>
+    <string name="no_workout_found_message">이 날짜에 기록된 발레 워크아웃이 없어요.</string>
+
+    <!-- Splash -->
+    <string name="splash_subtitle">플리에 부터 시작할까요</string>
+
+    <!-- Step names (Barre) -->
+    <string name="step_plie">플리에</string>
+    <string name="step_slow_tendu">슬로우 탄듀</string>
+    <string name="step_tendu">탄듀</string>
+    <string name="step_tendu_jete">제떼</string>
+    <string name="step_ronds_de_jambe_a_terre">롱드잠 아 떼르</string>
+    <string name="step_fondu">퐁듀</string>
+    <string name="step_frappe">프라뻬</string>
+    <string name="step_adagio">아다지오</string>
+    <string name="step_developpe">데벨로뻬</string>
+    <string name="step_grand_battements">그랑 바뜨망</string>
+    <string name="step_ronds_de_jambe_en_l_air">롱드잠 앙레르</string>
+
+    <!-- Step names (Center) -->
+    <string name="step_waltz">왈츠</string>
+    <string name="step_allegro_1">알레그로 1 (스몰점프)</string>
+    <string name="step_allegro_2">알레그로 2 (아쌈블레)</string>
+    <string name="step_allegro_3">알레그로 3 (제떼)</string>
+    <string name="step_medium_allegro">미디엄 알레그로</string>
+    <string name="step_grand_allegro">그랑 알레그로</string>
+</resources>
