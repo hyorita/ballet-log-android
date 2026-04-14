@@ -23,4 +23,7 @@ interface ClassLogDao {
 
     @Delete
     suspend fun delete(log: ClassLog)
+
+    @Query("UPDATE class_logs SET view_count = view_count + 1 WHERE id = :id")
+    suspend fun incrementViewCount(id: String)
 }

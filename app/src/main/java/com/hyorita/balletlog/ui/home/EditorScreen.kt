@@ -50,10 +50,15 @@ import java.util.*
 fun EditorScreen(
     existingLog: ClassLog?,
     onDismiss: (saved: Boolean) -> Unit,
-    vm: HomeViewModel = viewModel()
+    vm: HomeViewModel = viewModel(),
+    initialDate: Long? = null
 ) {
     val context = LocalContext.current
-    var date by remember { mutableStateOf(existingLog?.date ?: System.currentTimeMillis()) }
+    var date by remember {
+        mutableStateOf(
+            existingLog?.date ?: initialDate ?: System.currentTimeMillis()
+        )
+    }
     val barreSteps = remember {
         mutableStateListOf<Step>().also {
             it.addAll(existingLog?.barreSteps ?: DefaultSteps.barre)

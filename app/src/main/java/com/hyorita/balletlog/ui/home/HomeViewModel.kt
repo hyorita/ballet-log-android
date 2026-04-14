@@ -39,6 +39,10 @@ class HomeViewModel(app: Application) : AndroidViewModel(app) {
         viewModelScope.launch { dao.update(log.copy(favorite = !log.favorite)) }
     }
 
+    fun incrementViewCount(id: String) {
+        viewModelScope.launch { dao.incrementViewCount(id) }
+    }
+
     // insert 완료 후 워크아웃 fetch (새 기록용)
     fun insertAndFetchWorkout(log: ClassLog, onResult: (WorkoutInfo?) -> Unit = {}) {
         viewModelScope.launch {

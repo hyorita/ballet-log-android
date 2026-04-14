@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Favorite
@@ -40,6 +41,7 @@ import com.hyorita.balletlog.ui.home.HomeViewModel
 import com.hyorita.balletlog.ui.notes.NoteDetailScreen
 import com.hyorita.balletlog.ui.notes.NoteEditorScreen
 import com.hyorita.balletlog.ui.notes.NotesViewModel
+import com.hyorita.balletlog.ui.stats.StatsScreen
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -63,6 +65,9 @@ fun HistoryScreen(
     var showNoteDetail by remember { mutableStateOf(false) }
     var showNoteEditor by remember { mutableStateOf(false) }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
+
+    var showStats by remember { mutableStateOf(false) }
+    val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -107,7 +112,21 @@ fun HistoryScreen(
         notes.filter { dayKeyFormat.format(Date(it.createdAt)) == selectedDayKey }.sortedByDescending { it.createdAt }
     else monthNotes
 
-    Scaffold { padding ->
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { },
+                actions = {
+                    IconButton(onClick = { showStats = true }) {
+                        Icon(Icons.Default.BarChart, contentDescription = "Stats")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.background
+                )
+            )
+        }
+    ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 80.dp)
@@ -401,7 +420,15 @@ fun HistoryScreen(
             properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
         ) {
             Surface(modifier = Modifier.fillMaxSize()) {
-                EditorScreen(existingLog = selectedLog, onDismiss = { _ -> showEditor = false }, vm = vm)
+                val initialDateMillis = selectedDayKey?.let { key ->
+                    runCatching { dayKeyFormat.parse(key)?.time }.getOrNull()
+                }
+                EditorScreen(
+                    existingLog = selectedLog,
+                    onDismiss = { _ -> showEditor = false },
+                    vm = vm,
+                    initialDate = if (selectedLog == null) initialDateMillis else null
+                )
             }
         }
     }
@@ -422,6 +449,25 @@ fun HistoryScreen(
                     onTogglePin = { notesVm.togglePin(note) }
                 )
             }
+        }
+    }
+
+    // Stats sheet
+    if (showStats) {
+        ModalBottomSheet(
+            onDismissRequest = { showStats = false },
+            sheetState = statsSheetState,
+            dragHandle = null,
+            containerColor = MaterialTheme.colorScheme.background
+        ) {
+            StatsScreen(
+                onDismiss = { showStats = false },
+                onNavigateToLog = { log ->
+                    showStats = false
+                    selectedLog = log
+                    showDetail = true
+                }
+            )
         }
     }
 

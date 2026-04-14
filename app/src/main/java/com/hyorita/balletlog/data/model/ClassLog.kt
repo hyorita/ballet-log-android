@@ -1,5 +1,6 @@
 package com.hyorita.balletlog.data.model
 
+import androidx.room.ColumnInfo
 import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.google.gson.Gson
@@ -17,7 +18,8 @@ data class ClassLog(
     val centerMusic: String = "",
     val notes: String = "",
     val workoutJson: String? = null,
-    val favorite: Boolean = false
+    val favorite: Boolean = false,
+    @ColumnInfo(name = "view_count", defaultValue = "0") val viewCount: Int = 0
 ) {
     private val gson get() = Gson()
 
@@ -47,7 +49,8 @@ data class ClassLog(
             centerMusic: String = "",
             notes: String = "",
             workout: WorkoutInfo? = null,
-            favorite: Boolean = false
+            favorite: Boolean = false,
+            viewCount: Int = 0
         ): ClassLog {
             val gson = Gson()
             return ClassLog(
@@ -59,7 +62,8 @@ data class ClassLog(
                 centerMusic = centerMusic,
                 notes = notes,
                 workoutJson = workout?.let { gson.toJson(it) },
-                favorite = favorite
+                favorite = favorite,
+                viewCount = viewCount
             )
         }
     }

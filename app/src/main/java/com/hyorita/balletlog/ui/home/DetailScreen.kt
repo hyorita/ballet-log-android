@@ -15,7 +15,9 @@ import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.SportsGymnastics
+import androidx.compose.material.icons.filled.Visibility
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -26,14 +28,17 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import coil.compose.AsyncImage
+import coil.request.ImageRequest
 import com.hyorita.balletlog.R
-import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.data.PhotoManager
 import com.hyorita.balletlog.data.model.ClassLog
+import com.hyorita.balletlog.ui.common.findActivity
+import com.hyorita.balletlog.ui.common.shareLogCard
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -45,10 +50,15 @@ fun DetailScreen(
     onEdit: () -> Unit,
     onDelete: () -> Unit,
     onToggleFavorite: () -> Unit,
-    onFetchWorkout: () -> Unit = {}
+    onFetchWorkout: () -> Unit = {},
+    onView: () -> Unit = {}
 ) {
+    LaunchedEffect(log.id) {
+        onView()
+    }
     var showDeleteConfirm by remember { mutableStateOf(false) }
     var tabIndex by remember { mutableIntStateOf(0) }
+    var isSharing by remember { mutableStateOf(false) }
     val context = LocalContext.current
 
     val strBallet = stringResource(R.string.ballet_workout)
@@ -87,6 +97,35 @@ fun DetailScreen(
                                    else MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    if (isSharing) {
+                        Box(
+                            modifier = Modifier.size(48.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator(
+                                modifier = Modifier.size(24.dp),
+                                strokeWidth = 2.dp
+                            )
+                        }
+                    } else {
+                        IconButton(onClick = {
+                            isSharing = true
+                            Thread {
+                                try {
+                                    shareLogCard(context, log, tabIndex)
+                                } catch (e: Exception) {
+                                    android.util.Log.e("ShareLog", "Share failed: ${e.message}", e)
+                                } finally {
+                                    context.findActivity().runOnUiThread {
+                                        isSharing = false
+                                    }
+                                }
+                            }.start()
+                        }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant)
+                        }
+                    }
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
                     }
@@ -113,11 +152,28 @@ fun DetailScreen(
                         style = MaterialTheme.typography.headlineMedium,
                         fontWeight = FontWeight.Bold
                     )
-                    Text(
-                        text = timeFormat.format(Date(log.date)),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Text(
+                            text = timeFormat.format(Date(log.date)),
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                        if (log.viewCount > 0) {
+                            Spacer(Modifier.width(8.dp))
+                            Icon(
+                                Icons.Default.Visibility,
+                                contentDescription = null,
+                                modifier = Modifier.size(12.dp),
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                            Spacer(Modifier.width(3.dp))
+                            Text(
+                                "${log.viewCount}",
+                                fontSize = 12.sp,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
                 }
             }
 
@@ -420,3 +476,4 @@ fun WorkoutStat(icon: String, value: String, label: String) {
             color = MaterialTheme.colorScheme.onSurfaceVariant)
     }
 }
+

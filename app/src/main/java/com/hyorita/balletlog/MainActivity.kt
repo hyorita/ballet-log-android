@@ -1,6 +1,8 @@
 package com.hyorita.balletlog
 
 import android.os.Bundle
+import coil.Coil
+import coil.ImageLoader
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
@@ -55,6 +57,11 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
+
+        val imageLoader = ImageLoader.Builder(this)
+            .allowHardware(false)
+            .build()
+        Coil.setImageLoader(imageLoader)
 
         // Health Connect 퍼미션 요청
         if (HealthConnectClient.getSdkStatus(this) == HealthConnectClient.SDK_AVAILABLE) {

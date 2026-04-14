@@ -1,6 +1,8 @@
 package com.hyorita.balletlog.ui.notes
 
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -28,7 +30,7 @@ import com.hyorita.balletlog.data.model.Note
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalFoundationApi::class)
 @Composable
 fun NotesScreen(vm: NotesViewModel = viewModel()) {
     val notes by vm.notes.collectAsState()
@@ -37,6 +39,7 @@ fun NotesScreen(vm: NotesViewModel = viewModel()) {
     var selectedNote by remember { mutableStateOf<Note?>(null) }
     var searchQuery by remember { mutableStateOf("") }
     var selectedTag by remember { mutableStateOf<String?>(null) }
+    var tagToDelete by remember { mutableStateOf<String?>(null) }
 
     // 전체 태그 수집
     val allTags = remember(notes) {
@@ -112,12 +115,27 @@ fun NotesScreen(vm: NotesViewModel = viewModel()) {
                         ) {
                             allTags.forEach { tag ->
                                 val selected = selectedTag == tag
-                                FilterChip(
-                                    selected = selected,
-                                    onClick = { selectedTag = if (selected) null else tag },
-                                    label = { Text(tag) },
-                                    shape = RoundedCornerShape(20.dp)
-                                )
+                                Surface(
+                                    shape = RoundedCornerShape(50),
+                                    color = if (selected)
+                                        MaterialTheme.colorScheme.primary
+                                    else
+                                        MaterialTheme.colorScheme.surfaceVariant,
+                                    modifier = Modifier.combinedClickable(
+                                        onClick = { selectedTag = if (selected) null else tag },
+                                        onLongClick = { tagToDelete = tag }
+                                    )
+                                ) {
+                                    Text(
+                                        text = tag,
+                                        color = if (selected)
+                                            MaterialTheme.colorScheme.onPrimary
+                                        else
+                                            MaterialTheme.colorScheme.onSurfaceVariant,
+                                        fontSize = 13.sp,
+                                        modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                                    )
+                                }
                             }
                         }
                         Spacer(Modifier.height(12.dp))
@@ -214,6 +232,24 @@ fun NotesScreen(vm: NotesViewModel = viewModel()) {
                 )
             }
         }
+    }
+
+    if (tagToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { tagToDelete = null },
+            title = { Text("태그 삭제") },
+            text = { Text("\"${tagToDelete}\" 태그를 삭제할까요? 노트는 유지됩니다.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    vm.deleteTagFromAllNotes(tagToDelete!!)
+                    if (selectedTag == tagToDelete) selectedTag = null
+                    tagToDelete = null
+                }) { Text("삭제", color = MaterialTheme.colorScheme.error) }
+            },
+            dismissButton = {
+                TextButton(onClick = { tagToDelete = null }) { Text("취소") }
+            }
+        )
     }
 }
 
