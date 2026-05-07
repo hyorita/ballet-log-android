@@ -1,0 +1,157 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">バレエログ</string>
+
+    <!-- Navigation -->
+    <string name="nav_log">ログ</string>
+    <string name="nav_class">クラス</string>
+    <string name="nav_notes">メモ</string>
+    <string name="nav_history">履歴</string>
+
+    <!-- Photo Log -->
+    <string name="photolog_new">新規ログ</string>
+    <string name="photolog_settings">設定</string>
+    <string name="photolog_empty_title">まだログがありません</string>
+    <string name="photolog_empty_hint">+ ボタンで最初のログを始めましょう</string>
+    <string name="photolog_close">閉じる</string>
+    <string name="photolog_more">その他</string>
+    <string name="photolog_favorite">お気に入り</string>
+    <string name="photolog_edit">編集</string>
+    <string name="photolog_delete_title">このログを削除しますか？</string>
+    <string name="photolog_meta_text">テキスト</string>
+    <string name="photolog_meta_workout">ワークアウト</string>
+    <string name="photolog_meta_studio">スタジオ</string>
+    <string name="photolog_meta_level">レベル</string>
+    <string name="photolog_meta_teacher">先生</string>
+    <string name="photolog_studio_placeholder">バレエスタジオ</string>
+    <string name="photolog_caption_color">文字色</string>
+    <string name="photolog_clear_workout">ワークアウトをクリア</string>
+    <string name="photolog_manual_entry">手動入力</string>
+    <string name="photolog_recent_tags">最近の入力</string>
+    <string name="photolog_tag_delete_title">タグを削除しますか？</string>
+    <string name="photolog_share">共有</string>
+    <string name="history_photo_logs">フォトログ</string>
+
+    <!-- Settings -->
+    <string name="settings_profile">プロフィール</string>
+    <string name="settings_username_placeholder">ユーザー名</string>
+    <string name="settings_backup">バックアップ</string>
+    <string name="settings_export_data">データを書き出す</string>
+    <string name="settings_import_data">データを取り込む</string>
+    <string name="settings_backup_footer">「書き出し」はクラス・ノート・写真を一つのバックアップファイルにまとめます。メール送信やファイルアプリへの保存後、「取り込み」で復元できます。</string>
+    <string name="settings_about">情報</string>
+    <string name="settings_version">バージョン</string>
+    <string name="settings_developer">開発者</string>
+    <string name="settings_working">処理中…</string>
+    <string name="settings_export_success">バックアップを作成しました。保存または共有先を選んでください。</string>
+    <string name="settings_export_failed">書き出しに失敗しました: %1$s</string>
+    <string name="settings_import_success">復元が完了しました。データを反映するためにアプリを再起動してください。</string>
+    <string name="settings_import_failed">取り込みに失敗しました: %1$s</string>
+    <string name="settings_invalid_archive">選択されたファイルは Ballet Log のバックアップではありません。</string>
+
+    <!-- In-app backup nudge -->
+    <string name="backup_banner_title">Play ストア公開前にバックアップ</string>
+    <string name="backup_banner_message">公開時はアプリの再インストールが必要です。今のうちに書き出しておけば、ワンタップで復元できます。</string>
+    <string name="backup_banner_action">今すぐバックアップ</string>
+    <string name="backup_banner_dismiss">閉じる</string>
+    <string name="notes_show_more">他%1$d件</string>
+    <string name="notes_show_less">折りたたむ</string>
+    <string name="notes_delete_tag_title">タグを削除</string>
+    <string name="notes_delete_tag_message">すべてのメモから\"%1$s\"を削除しますか？</string>
+    <string name="class_log">クラスログ</string>
+    <string name="untitled">タイトルなし</string>
+
+    <!-- Home Screen -->
+    <string name="home_title">ホーム</string>
+    <string name="record_class">レッスンを記録</string>
+    <string name="today">今日</string>
+    <string name="recent">最近</string>
+    <string name="favorites">お気に入り</string>
+    <string name="no_classes_logged_yet">まだレッスンの記録がありません</string>
+    <string name="tap_record_class">次のバーレッスンの後に「レッスンを記録」をタップ</string>
+
+    <!-- Editor Screen -->
+    <string name="new_class">新規レッスン</string>
+    <string name="edit_class">レッスンを編集</string>
+    <string name="save">保存</string>
+    <string name="date">日付</string>
+    <string name="barre">バー</string>
+    <string name="center">センター</string>
+    <string name="photos">写真</string>
+    <string name="step_name">ステップ名</string>
+    <string name="combination_notes">コンビネーションのメモ...</string>
+    <string name="add_step">ステップを追加</string>
+    <string name="notes_label">メモ</string>
+    <string name="class_notes">レッスンメモ...</string>
+    <string name="youtube_url">YouTube URL</string>
+    <string name="find_ballet_workout">バレエワークアウトを検索</string>
+    <string name="ballet_workout_found">バレエワークアウトが見つかりました ✓</string>
+
+    <!-- Detail Screen -->
+    <string name="ballet_workout">バレエワークアウト</string>
+    <string name="duration">時間</string>
+    <string name="active_cal">消費カロリー</string>
+    <string name="avg_bpm">平均心拍数</string>
+    <string name="max_bpm">最大心拍数</string>
+    <string name="no_steps_recorded">記録されたステップはありません</string>
+    <string name="music">音楽</string>
+    <string name="delete_class_title">レッスンを削除しますか？</string>
+    <string name="delete_class_message">このレッスン記録は完全に削除されます。</string>
+    <string name="delete">削除</string>
+    <string name="cancel">キャンセル</string>
+
+    <!-- Notes Screen -->
+    <string name="new_note">新規メモ</string>
+    <string name="edit_note">メモを編集</string>
+    <string name="no_notes_yet">メモはまだありません</string>
+    <string name="tap_new_note">「新規メモ」をタップしてメモを残しましょう</string>
+    <string name="search">検索</string>
+    <string name="no_results">結果なし</string>
+    <string name="what_to_remember">何を覚えておきたいですか？</string>
+    <string name="youtube_instagram_link">YouTube、Instagramリンク...</string>
+    <string name="link_to_class">レッスンにリンク</string>
+    <string name="linked_class">リンクされたレッスン</string>
+    <string name="select_class">レッスンを選択</string>
+    <string name="select_a_class_optional">レッスンを選択（任意）</string>
+    <string name="delete_note_title">このメモを削除しますか？</string>
+    <string name="delete_note_message">このメモは完全に削除されます。</string>
+    <string name="reference_link">参考リンク</string>
+    <string name="tags">タグ</string>
+
+    <!-- History Screen -->
+    <string name="classes">レッスン</string>
+    <string name="no_classes_on_this_day">この日にレッスンはありません</string>
+
+    <!-- Alerts -->
+    <string name="leave_page">ページを離れますか？</string>
+    <string name="changes_not_saved">変更内容は保存されません。</string>
+    <string name="discard">破棄</string>
+    <string name="ok">OK</string>
+    <string name="done">完了</string>
+    <string name="no_workout_found">ワークアウトが見つかりません</string>
+    <string name="no_workout_found_message">この日付のワークアウトデータがヘルスコネクトに見つかりませんでした。</string>
+
+    <!-- Splash -->
+    <string name="splash_subtitle">プリエから始めましょう</string>
+
+    <!-- Step names (Barre) -->
+    <string name="step_plie">プリエ</string>
+    <string name="step_slow_tendu">スロー・タンデュ</string>
+    <string name="step_tendu">タンデュ</string>
+    <string name="step_tendu_jete">タンデュ・ジュテ</string>
+    <string name="step_ronds_de_jambe_a_terre">ロン・ド・ジャンブ・ア・テール</string>
+    <string name="step_fondu">フォンデュ</string>
+    <string name="step_frappe">フラッペ</string>
+    <string name="step_adagio">アダージオ</string>
+    <string name="step_developpe">デヴェロッペ</string>
+    <string name="step_grand_battements">グラン・バットマン</string>
+    <string name="step_ronds_de_jambe_en_l_air">ロン・ド・ジャンブ・アン・レール</string>
+
+    <!-- Step names (Center) -->
+    <string name="step_waltz">ワルツ</string>
+    <string name="step_allegro_1">アレグロ 1（ソテ）</string>
+    <string name="step_allegro_2">アレグロ 2（アッサンブレ）</string>
+    <string name="step_allegro_3">アレグロ 3（ジュテ）</string>
+    <string name="step_medium_allegro">ミディアム・アレグロ</string>
+    <string name="step_grand_allegro">グラン・アレグロ</string>
+</resources>

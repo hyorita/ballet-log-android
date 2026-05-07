@@ -11,6 +11,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.SportsGymnastics
 import androidx.compose.material.icons.filled.Note
 import androidx.compose.material3.*
@@ -19,10 +20,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
-import androidx.health.connect.client.permission.HealthPermission
-import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
-import androidx.health.connect.client.records.ExerciseSessionRecord
-import androidx.health.connect.client.records.HeartRateRecord
+import com.hyorita.balletlog.data.HealthConnectManager
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -32,26 +30,24 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hyorita.balletlog.ui.history.HistoryScreen
-import com.hyorita.balletlog.ui.home.HomeScreen
+import com.hyorita.balletlog.ui.home.ClassScreen
 import com.hyorita.balletlog.ui.notes.NotesScreen
+import com.hyorita.balletlog.ui.photolog.PhotoLogScreen
 import com.hyorita.balletlog.ui.theme.BalletLogTheme
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector, val labelRes: Int) {
-    object Log : Screen("log", "Log", Icons.Default.SportsGymnastics, R.string.nav_log)
+    object Log : Screen("log", "Log", Icons.Default.PhotoLibrary, R.string.nav_log)
+    object Class : Screen("class", "Class", Icons.Default.SportsGymnastics, R.string.nav_class)
     object Notes : Screen("notes", "Notes", Icons.Default.Note, R.string.nav_notes)
     object History : Screen("history", "History", Icons.Default.CalendarMonth, R.string.nav_history)
 }
 
 class MainActivity : ComponentActivity() {
 
-    private val healthPermissions = setOf(
-        HealthPermission.getReadPermission(ExerciseSessionRecord::class),
-        HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
-        HealthPermission.getReadPermission(HeartRateRecord::class)
-    )
-
+    // Single source of truth lives in HealthConnectManager.permissions so the
+    // request set never drifts from the read set used at fetch time.
     private val requestPermissions = registerForActivityResult(
-        androidx.health.connect.client.PermissionController.createRequestPermissionResultContract()
+        PermissionController.createRequestPermissionResultContract()
     ) { /* 결과는 hasPermissions()로 확인 */ }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -65,7 +61,7 @@ class MainActivity : ComponentActivity() {
 
         // Health Connect 퍼미션 요청
         if (HealthConnectClient.getSdkStatus(this) == HealthConnectClient.SDK_AVAILABLE) {
-            requestPermissions.launch(healthPermissions)
+            requestPermissions.launch(HealthConnectManager.permissions)
         }
 
         setContent {
@@ -79,7 +75,7 @@ class MainActivity : ComponentActivity() {
 @Composable
 fun BalletLogApp() {
     val navController = rememberNavController()
-    val tabs = listOf(Screen.Log, Screen.Notes, Screen.History)
+    val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.History)
 
     Scaffold(
         bottomBar = {
@@ -115,11 +111,14 @@ fun BalletLogApp() {
         NavHost(
             navController = navController,
             startDestination = Screen.Log.route,
-            modifier = Modifier.padding(top = innerPadding.calculateTopPadding()),
+            // Apply BOTH top and bottom inner padding so screen-level bottom
+            // bars (e.g. Notes' bottom-pinned search) sit above the NavBar.
+            modifier = Modifier.padding(innerPadding),
             enterTransition = { androidx.compose.animation.EnterTransition.None },
             exitTransition = { androidx.compose.animation.ExitTransition.None }
         ) {
-            composable(Screen.Log.route) { HomeScreen() }
+            composable(Screen.Log.route) { PhotoLogScreen() }
+            composable(Screen.Class.route) { ClassScreen() }
             composable(Screen.Notes.route) { NotesScreen() }
             composable(Screen.History.route) { HistoryScreen() }
         }

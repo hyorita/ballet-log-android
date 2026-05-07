@@ -4,8 +4,62 @@
 
     <!-- Navigation -->
     <string name="nav_log">Log</string>
+    <string name="nav_class">Class</string>
     <string name="nav_notes">Notes</string>
     <string name="nav_history">History</string>
+
+    <!-- Photo Log -->
+    <string name="photolog_new">New Log</string>
+    <string name="photolog_settings">Settings</string>
+    <string name="photolog_empty_title">No logs yet</string>
+    <string name="photolog_empty_hint">Tap + to start your first log</string>
+    <string name="photolog_close">Close</string>
+    <string name="photolog_more">More</string>
+    <string name="photolog_favorite">Favorite</string>
+    <string name="photolog_edit">Edit</string>
+    <string name="photolog_delete_title">Delete this log?</string>
+    <string name="photolog_meta_text">Text</string>
+    <string name="photolog_meta_workout">Workout</string>
+    <string name="photolog_meta_studio">Studio</string>
+    <string name="photolog_meta_level">Level</string>
+    <string name="photolog_meta_teacher">Teacher</string>
+    <string name="photolog_studio_placeholder">Ballet Studio</string>
+    <string name="photolog_caption_color">Color</string>
+    <string name="photolog_clear_workout">Clear workout</string>
+    <string name="photolog_manual_entry">Manual entry</string>
+    <string name="photolog_recent_tags">Recent</string>
+    <string name="photolog_tag_delete_title">Delete tag?</string>
+    <string name="photolog_share">Share</string>
+    <string name="history_photo_logs">Photo Logs</string>
+
+    <!-- Settings -->
+    <string name="settings_profile">Profile</string>
+    <string name="settings_username_placeholder">username</string>
+    <string name="settings_backup">Backup</string>
+    <string name="settings_export_data">Export Data</string>
+    <string name="settings_import_data">Import Data</string>
+    <string name="settings_backup_footer">Export packages all your classes, notes, and photos into a single backup file you can save or share. Import restores from that file.</string>
+    <string name="settings_about">About</string>
+    <string name="settings_version">Version</string>
+    <string name="settings_developer">Developer</string>
+    <string name="settings_working">Working…</string>
+    <string name="settings_export_success">Backup created. Choose where to save or share it.</string>
+    <string name="settings_export_failed">Export failed: %1$s</string>
+    <string name="settings_import_success">Restore complete. Please relaunch the app for the data to take effect.</string>
+    <string name="settings_import_failed">Import failed: %1$s</string>
+    <string name="settings_invalid_archive">Selected file is not a valid Ballet Log backup.</string>
+
+    <!-- In-app backup nudge (shown until first export) -->
+    <string name="backup_banner_title">Back up before Play Store launch</string>
+    <string name="backup_banner_message">When the Play Store version goes live, exporting now lets you restore everything in one tap.</string>
+    <string name="backup_banner_action">Back up now</string>
+    <string name="backup_banner_dismiss">Dismiss</string>
+    <string name="notes_show_more">+%1$d more</string>
+    <string name="notes_show_less">Show less</string>
+    <string name="notes_delete_tag_title">Delete tag</string>
+    <string name="notes_delete_tag_message">Remove \"%1$s\" from all notes?</string>
+    <string name="class_log">Class Log</string>
+    <string name="untitled">No Title</string>
 
     <!-- Home Screen -->
     <string name="home_title">Home</string>

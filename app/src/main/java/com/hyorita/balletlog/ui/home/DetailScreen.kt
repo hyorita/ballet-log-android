@@ -37,6 +37,7 @@ import coil.request.ImageRequest
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.PhotoManager
 import com.hyorita.balletlog.data.model.ClassLog
+import com.hyorita.balletlog.ui.common.WorkoutCard
 import com.hyorita.balletlog.ui.common.findActivity
 import com.hyorita.balletlog.ui.common.shareLogCard
 import java.text.SimpleDateFormat
@@ -228,47 +229,17 @@ fun DetailScreen(
             // 워크아웃 카드 (있을 때만)
             log.workout?.let { workout ->
                 item {
-                    Card(
+                    WorkoutCard(
+                        workout = workout,
+                        title = strBallet,
+                        durationLabel = strDuration,
+                        activeCalLabel = strActiveCal,
+                        avgBpmLabel = strAvgBpm,
+                        maxBpmLabel = strMaxBpm,
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
-                        shape = RoundedCornerShape(16.dp),
-                        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-                        colors = CardDefaults.cardColors(
-                            containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
-                        )
-                    ) {
-                        Column(modifier = Modifier.padding(16.dp)) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Icon(Icons.Default.SportsGymnastics, contentDescription = null,
-                                    modifier = Modifier.size(22.dp))
-                                Spacer(Modifier.width(8.dp))
-                                Text(strBallet,
-                                    style = MaterialTheme.typography.titleMedium,
-                                    fontWeight = FontWeight.SemiBold)
-                                Spacer(Modifier.weight(1f))
-                                if (workout.sourceName.isNotEmpty()) {
-                                    Text(workout.sourceName,
-                                        style = MaterialTheme.typography.bodySmall,
-                                        color = MaterialTheme.colorScheme.onSurfaceVariant)
-                                }
-                            }
-                            Spacer(Modifier.height(14.dp))
-                            Row(
-                                modifier = Modifier.fillMaxWidth(),
-                                horizontalArrangement = Arrangement.SpaceAround
-                            ) {
-                                WorkoutStat("⏱",
-                                    if (workout.durationMinutes >= 60)
-                                        "${workout.durationMinutes / 60}h ${workout.durationMinutes % 60}m"
-                                    else "${workout.durationMinutes}m",
-                                    strDuration)
-                                WorkoutStat("🔥", "${workout.activeCalories}", strActiveCal)
-                                WorkoutStat("❤️", "${workout.avgHeartRate}", strAvgBpm)
-                                WorkoutStat("❤️", "${workout.maxHeartRate}", strMaxBpm)
-                            }
-                        }
-                    }
+                            .padding(horizontal = 16.dp)
+                    )
                 }
             }
 

@@ -11,12 +11,16 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.LocalFireDepartment
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
@@ -32,15 +36,21 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
+import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.PhotoManager
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.Note
+import com.hyorita.balletlog.data.model.PhotoLog
+import com.hyorita.balletlog.ui.common.LogCard
+import com.hyorita.balletlog.ui.common.NoteCard
 import com.hyorita.balletlog.ui.home.DetailScreen
 import com.hyorita.balletlog.ui.home.EditorScreen
 import com.hyorita.balletlog.ui.home.HomeViewModel
 import com.hyorita.balletlog.ui.notes.NoteDetailScreen
 import com.hyorita.balletlog.ui.notes.NoteEditorScreen
 import com.hyorita.balletlog.ui.notes.NotesViewModel
+import com.hyorita.balletlog.ui.photolog.PhotoLogCard
+import com.hyorita.balletlog.ui.photolog.PhotoLogViewModel
 import com.hyorita.balletlog.ui.stats.StatsScreen
 import java.text.SimpleDateFormat
 import java.util.*
@@ -49,10 +59,13 @@ import java.util.*
 @Composable
 fun HistoryScreen(
     vm: HomeViewModel = viewModel(),
-    notesVm: NotesViewModel = viewModel()
+    notesVm: NotesViewModel = viewModel(),
+    photoLogVm: PhotoLogViewModel = viewModel()
 ) {
     val logs by vm.logs.collectAsState()
     val notes by notesVm.notes.collectAsState()
+    val photoLogs by photoLogVm.photoLogs.collectAsState()
+    var selectedPhotoLog by remember { mutableStateOf<PhotoLog?>(null) }
 
     var currentYear by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
     var currentMonth by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
@@ -90,6 +103,20 @@ fun HistoryScreen(
         }.groupBy { dayKeyFormat.format(Date(it.createdAt)) }
     }
 
+    val photoLogsByDay = remember(photoLogs, currentYear, currentMonth) {
+        photoLogs.filter { p ->
+            val cal = Calendar.getInstance().also { it.timeInMillis = p.date }
+            cal.get(Calendar.YEAR) == currentYear && cal.get(Calendar.MONTH) == currentMonth
+        }.groupBy { dayKeyFormat.format(Date(it.date)) }
+    }
+
+    val monthPhotoLogs = remember(photoLogs, currentYear, currentMonth) {
+        photoLogs.filter { p ->
+            val cal = Calendar.getInstance().also { it.timeInMillis = p.date }
+            cal.get(Calendar.YEAR) == currentYear && cal.get(Calendar.MONTH) == currentMonth
+        }.sortedByDescending { it.date }
+    }
+
     val monthLogs = remember(logs, currentYear, currentMonth) {
         logs.filter { log ->
             val cal = Calendar.getInstance().also { it.timeInMillis = log.date }
@@ -112,10 +139,19 @@ fun HistoryScreen(
         notes.filter { dayKeyFormat.format(Date(it.createdAt)) == selectedDayKey }.sortedByDescending { it.createdAt }
     else monthNotes
 
+    val displayPhotoLogs = if (selectedDayKey != null)
+        photoLogs.filter { dayKeyFormat.format(Date(it.date)) == selectedDayKey }.sortedByDescending { it.date }
+    else monthPhotoLogs
+
     Scaffold(
         topBar = {
             TopAppBar(
-                title = { },
+                title = {
+                    Text(
+                        stringResource(R.string.nav_history),
+                        fontWeight = FontWeight.SemiBold
+                    )
+                },
                 actions = {
                     IconButton(onClick = { showStats = true }) {
                         Icon(Icons.Default.BarChart, contentDescription = "Stats")
@@ -129,24 +165,8 @@ fun HistoryScreen(
     ) { padding ->
         LazyColumn(
             modifier = Modifier.fillMaxSize().padding(padding),
-            contentPadding = PaddingValues(bottom = 80.dp)
+            contentPadding = PaddingValues(bottom = 16.dp)
         ) {
-            // 헤더
-            item {
-                Column(modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
-                    Text(
-                        text = dateFormat.format(Date()),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                    Text(
-                        text = stringResource(R.string.nav_history),
-                        style = MaterialTheme.typography.headlineLarge,
-                        fontWeight = FontWeight.Bold
-                    )
-                }
-            }
-
             // 캘린더 카드
             item {
                 Card(
@@ -187,9 +207,17 @@ fun HistoryScreen(
 
                         Spacer(Modifier.height(8.dp))
 
-                        // 요일 헤더 Sun~Sat
+                        // Locale-aware weekday header — first letter of each
+                        // short symbol, ordered starting at the locale's first
+                        // day of week (Sunday on most en/ko/ja systems).
+                        val localeFirstDay = remember { Calendar.getInstance().firstDayOfWeek } // 1=Sun..7=Sat
+                        val weekdaySymbols = remember(localeFirstDay) {
+                            val sym = java.text.DateFormatSymbols.getInstance().shortWeekdays
+                            val order = (localeFirstDay..7).toList() + (1 until localeFirstDay).toList()
+                            order.map { sym.getOrNull(it)?.firstOrNull()?.toString().orEmpty() }
+                        }
                         Row(modifier = Modifier.fillMaxWidth()) {
-                            listOf("S", "M", "T", "W", "T", "F", "S").forEach { day ->
+                            weekdaySymbols.forEach { day ->
                                 Text(
                                     text = day,
                                     modifier = Modifier.weight(1f),
@@ -207,9 +235,9 @@ fun HistoryScreen(
                         val cal = Calendar.getInstance().also {
                             it.set(currentYear, currentMonth, 1)
                             it.minimalDaysInFirstWeek = 1
-                            it.firstDayOfWeek = Calendar.SUNDAY
+                            it.firstDayOfWeek = localeFirstDay
                         }
-                        val firstDayOfWeek = cal.get(Calendar.DAY_OF_WEEK) - 1 // 0=Sun
+                        val firstDayOfWeek = ((cal.get(Calendar.DAY_OF_WEEK) - localeFirstDay) + 7) % 7
                         val daysInMonth = cal.getActualMaximum(Calendar.DAY_OF_MONTH)
                         val rows = (firstDayOfWeek + daysInMonth + 6) / 7
 
@@ -223,6 +251,7 @@ fun HistoryScreen(
                                         val key = "%04d-%02d-%02d".format(currentYear, currentMonth + 1, day)
                                         val hasLog = logsByDay.containsKey(key)
                                         val hasNote = notesByDay.containsKey(key)
+                                        val hasPhotoLog = photoLogsByDay.containsKey(key)
                                         val isSelected = selectedDayKey == key
                                         val isToday = currentYear == today.get(Calendar.YEAR) &&
                                             currentMonth == today.get(Calendar.MONTH) &&
@@ -237,7 +266,13 @@ fun HistoryScreen(
                                                 .weight(1f)
                                                 .height(40.dp)
                                                 .clip(CircleShape)
-                                                .then(if (isSelected) Modifier.background(Color.Black) else Modifier)
+                                                .then(
+                                                    when {
+                                                        isSelected -> Modifier.background(MaterialTheme.colorScheme.primary)
+                                                        isToday -> Modifier.background(MaterialTheme.colorScheme.surfaceContainerHigh)
+                                                        else -> Modifier
+                                                    }
+                                                )
                                                 .clickable(enabled = !isFuture) {
                                                     selectedDayKey = if (selectedDayKey == key) null else key
                                                 },
@@ -249,18 +284,21 @@ fun HistoryScreen(
                                                     style = MaterialTheme.typography.bodyMedium,
                                                     fontWeight = if (isToday || isSelected) FontWeight.Bold else FontWeight.Normal,
                                                     color = when {
-                                                        isSelected -> Color.White
+                                                        isSelected -> MaterialTheme.colorScheme.onPrimary
                                                         isFuture -> MaterialTheme.colorScheme.onSurface.copy(alpha = 0.25f)
-                                                        isToday -> MaterialTheme.colorScheme.primary
                                                         else -> MaterialTheme.colorScheme.onSurface
                                                     }
                                                 )
-                                                // 기록 있는 날 dot
-                                                if ((hasLog || hasNote) && !isSelected && !isFuture) {
+                                                // Activity dots — log (primary), photoLog (pink), note (tertiary)
+                                                if ((hasLog || hasNote || hasPhotoLog) && !isSelected && !isFuture) {
                                                     Row(horizontalArrangement = Arrangement.spacedBy(2.dp)) {
                                                         if (hasLog) Box(
                                                             modifier = Modifier.size(4.dp).clip(CircleShape)
                                                                 .background(MaterialTheme.colorScheme.primary)
+                                                        )
+                                                        if (hasPhotoLog) Box(
+                                                            modifier = Modifier.size(4.dp).clip(CircleShape)
+                                                                .background(Color(0xFFE91E63))
                                                         )
                                                         if (hasNote) Box(
                                                             modifier = Modifier.size(4.dp).clip(CircleShape)
@@ -280,7 +318,7 @@ fun HistoryScreen(
             }
 
             // 날짜 선택 && 기록 없음 → iOS 스타일 빈 상태
-            if (selectedDayKey != null && displayLogs.isEmpty() && displayNotes.isEmpty()) {
+            if (selectedDayKey != null && displayLogs.isEmpty() && displayNotes.isEmpty() && displayPhotoLogs.isEmpty()) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
@@ -342,11 +380,49 @@ fun HistoryScreen(
                 }
             } else {
                 items(displayLogs, key = { it.id }) { log ->
-                    HistoryLogCard(
+                    LogCard(
                         log = log,
-                        dateFormat = listDateFormat,
                         onTap = { selectedLog = log; showDetail = true },
-                        onFavorite = { vm.toggleFavorite(log) }
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+
+            // Photo Logs 섹션 — full-width banner cards (iOS HistoryView parity)
+            if (displayPhotoLogs.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.PhotoLibrary,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.history_photo_logs),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            "${displayPhotoLogs.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                items(displayPhotoLogs, key = { "photo-${it.id}" }) { p ->
+                    HistoryPhotoLogBanner(
+                        photoLog = p,
+                        onTap = { selectedPhotoLog = p }
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -383,9 +459,11 @@ fun HistoryScreen(
                 }
             } else {
                 items(displayNotes, key = { "note-${it.id}" }) { note ->
-                    HistoryNoteCard(
+                    NoteCard(
                         note = note,
-                        onTap = { selectedNote = note; showNoteDetail = true }
+                        onTap = { selectedNote = note; showNoteDetail = true },
+                        modifier = Modifier.padding(horizontal = 16.dp),
+                        untitledLabel = stringResource(R.string.untitled)
                     )
                     Spacer(Modifier.height(8.dp))
                 }
@@ -443,10 +521,16 @@ fun HistoryScreen(
             Surface(modifier = Modifier.fillMaxSize()) {
                 NoteDetailScreen(
                     note = notes.find { it.id == note.id } ?: note,
+                    classLogs = logs,
                     onDismiss = { showNoteDetail = false },
                     onEdit = { showNoteEditor = true },
                     onDelete = { notesVm.delete(note); showNoteDetail = false },
-                    onTogglePin = { notesVm.togglePin(note) }
+                    onTogglePin = { notesVm.togglePin(note) },
+                    onOpenLog = { log ->
+                        showNoteDetail = false
+                        selectedLog = log
+                        showDetail = true
+                    }
                 )
             }
         }
@@ -471,6 +555,40 @@ fun HistoryScreen(
         }
     }
 
+    // PhotoLog full-screen preview (matches iOS HistoryPhotoLogPreview)
+    selectedPhotoLog?.let { p ->
+        Dialog(
+            onDismissRequest = { selectedPhotoLog = null },
+            properties = DialogProperties(
+                usePlatformDefaultWidth = false,
+                decorFitsSystemWindows = false
+            )
+        ) {
+            Box(
+                modifier = Modifier
+                    .fillMaxSize()
+                    .background(Color.Black)
+            ) {
+                PhotoLogCard(photoLog = p)
+                IconButton(
+                    onClick = { selectedPhotoLog = null },
+                    modifier = Modifier
+                        .align(Alignment.TopStart)
+                        .padding(12.dp)
+                        .size(44.dp)
+                        .clip(CircleShape)
+                        .background(Color.Black.copy(alpha = 0.30f))
+                ) {
+                    Icon(
+                        Icons.Default.Close,
+                        contentDescription = null,
+                        tint = Color.White
+                    )
+                }
+            }
+        }
+    }
+
     // Note Editor
     if (showNoteEditor) {
         val allTags = notes.flatMap { it.tags }.distinct().sorted()
@@ -481,6 +599,7 @@ fun HistoryScreen(
             Surface(modifier = Modifier.fillMaxSize()) {
                 NoteEditorScreen(
                     existingNote = selectedNote,
+                    classLogs = logs,
                     allTags = allTags,
                     onDismiss = { showNoteEditor = false },
                     vm = notesVm
@@ -490,111 +609,90 @@ fun HistoryScreen(
     }
 }
 
+
 @Composable
-fun HistoryLogCard(log: ClassLog, dateFormat: SimpleDateFormat, onTap: () -> Unit, onFavorite: () -> Unit) {
+fun HistoryPhotoLogBanner(photoLog: PhotoLog, onTap: () -> Unit) {
     val context = LocalContext.current
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        onClick = onTap
+    val displayName = photoLog.filteredPhotoPath ?: photoLog.photoPath
+    val photoFile = remember(displayName) { PhotoLogStorage.fileFor(context, displayName) }
+    val dateText = remember(photoLog.date) {
+        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(photoLog.date))
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(110.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color.Gray.copy(alpha = 0.25f))
+            .clickable(onClick = onTap)
     ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Box(
+        AsyncImage(
+            model = photoFile,
+            contentDescription = null,
+            contentScale = ContentScale.Crop,
+            modifier = Modifier.fillMaxSize()
+        )
+
+        // Bottom gradient for text legibility
+        Box(
+            modifier = Modifier
+                .align(Alignment.BottomCenter)
+                .fillMaxWidth()
+                .fillMaxHeight(0.6f)
+                .background(
+                    Brush.verticalGradient(
+                        colors = listOf(Color.Transparent, Color.Black.copy(alpha = 0.7f))
+                    )
+                )
+        )
+
+        if (photoLog.isFavorite) {
+            Icon(
+                Icons.Default.Favorite,
+                contentDescription = null,
+                tint = Color(0xFFE91E63),
                 modifier = Modifier
-                    .size(48.dp)
-                    .clip(RoundedCornerShape(10.dp))
-                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                contentAlignment = Alignment.Center
-            ) {
-                if (log.photos.isNotEmpty()) {
-                    AsyncImage(
-                        model = PhotoManager.getPhotoFile(context, log.photos.first().fileName),
+                    .align(Alignment.TopEnd)
+                    .padding(8.dp)
+                    .size(14.dp)
+            )
+        }
+
+        Row(
+            modifier = Modifier
+                .align(Alignment.BottomStart)
+                .fillMaxWidth()
+                .padding(horizontal = 12.dp, vertical = 10.dp),
+            verticalAlignment = Alignment.Bottom
+        ) {
+            Text(
+                dateText,
+                color = Color.White,
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold,
+                modifier = Modifier.weight(1f)
+            )
+            photoLog.kcal?.let { k ->
+                Row(
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(3.dp)
+                ) {
+                    Icon(
+                        Icons.Default.LocalFireDepartment,
                         contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
+                        tint = Color.White,
+                        modifier = Modifier.size(11.dp)
                     )
-                } else {
-                    Image(
-                        painter = painterResource(id = R.drawable.ic_ballet_shoe),
-                        contentDescription = null,
-                        contentScale = ContentScale.Crop,
-                        modifier = Modifier.fillMaxSize()
-                    )
-                }
-            }
-            Spacer(Modifier.width(12.dp))
-            Column(modifier = Modifier.weight(1f)) {
-                Text(
-                    text = dateFormat.format(Date(log.date)),
-                    style = MaterialTheme.typography.bodyLarge,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Text(
-                    text = "Barre ${log.barreSteps.size} · Center ${log.centerSteps.size} steps",
-                    style = MaterialTheme.typography.bodySmall,
-                    color = MaterialTheme.colorScheme.onSurfaceVariant
-                )
-                log.workout?.let { w ->
                     Text(
-                        text = "⏱ ${w.durationMinutes}min  🔥 ${w.activeCalories.toInt()}kcal",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                        "${k}kcal",
+                        color = Color.White,
+                        style = MaterialTheme.typography.labelMedium,
+                        fontWeight = FontWeight.SemiBold
                     )
                 }
-            }
-            IconButton(onClick = onFavorite) {
-                Icon(
-                    imageVector = Icons.Default.Favorite,
-                    contentDescription = "Favorite",
-                    tint = if (log.favorite) Color.Red else MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                )
             }
         }
     }
 }
 
-@Composable
-fun HistoryNoteCard(note: Note, onTap: () -> Unit) {
-    Card(
-        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
-        shape = RoundedCornerShape(16.dp),
-        elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
-        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-        onClick = onTap
-    ) {
-        Row(
-            modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 14.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Text(
-                        text = note.title.ifEmpty { "Untitled" },
-                        style = MaterialTheme.typography.bodyLarge,
-                        fontWeight = FontWeight.SemiBold,
-                        maxLines = 1
-                    )
-                    if (note.pinned) {
-                        Spacer(Modifier.width(6.dp))
-                        Text("📌", fontSize = 14.sp)
-                    }
-                }
-                if (note.content.isNotEmpty()) {
-                    Spacer(Modifier.height(2.dp))
-                    Text(
-                        text = note.content,
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant,
-                        maxLines = 1
-                    )
-                }
-            }
-            Text("›", fontSize = 22.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
-        }
-    }
-}

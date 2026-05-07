@@ -6,6 +6,7 @@ import androidx.health.connect.client.permission.HealthPermission
 import androidx.health.connect.client.records.ActiveCaloriesBurnedRecord
 import androidx.health.connect.client.records.ExerciseSessionRecord
 import androidx.health.connect.client.records.HeartRateRecord
+import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.hyorita.balletlog.data.model.WorkoutInfo
@@ -18,6 +19,7 @@ object HealthConnectManager {
     val permissions = setOf(
         HealthPermission.getReadPermission(ExerciseSessionRecord::class),
         HealthPermission.getReadPermission(ActiveCaloriesBurnedRecord::class),
+        HealthPermission.getReadPermission(TotalCaloriesBurnedRecord::class),
         HealthPermission.getReadPermission(HeartRateRecord::class)
     )
 
@@ -61,13 +63,29 @@ object HealthConnectManager {
 
             val durationMinutes = (session.endTime.epochSecond - session.startTime.epochSecond) / 60
 
-            // 칼로리
-            val calories = client.readRecords(
+            // 칼로리 — Active 우선, 없으면 Total fallback (Galaxy Watch 등은
+            // ActiveCaloriesBurned를 따로 기록하지 않고 Total만 남기는 경우가 많음)
+            val activeCalories = client.readRecords(
                 ReadRecordsRequest(
                     recordType = ActiveCaloriesBurnedRecord::class,
                     timeRangeFilter = TimeRangeFilter.between(session.startTime, session.endTime)
                 )
             ).records.sumOf { it.energy.inKilocalories }.toInt()
+
+            val calories = if (activeCalories > 0) {
+                activeCalories
+            } else {
+                val totalCalories = runCatching {
+                    client.readRecords(
+                        ReadRecordsRequest(
+                            recordType = TotalCaloriesBurnedRecord::class,
+                            timeRangeFilter = TimeRangeFilter.between(session.startTime, session.endTime)
+                        )
+                    ).records.sumOf { it.energy.inKilocalories }.toInt()
+                }.getOrDefault(0)
+                android.util.Log.d("HealthConnect", "Active=$activeCalories, Total=$totalCalories")
+                totalCalories
+            }
 
             // 심박수
             val heartRates = client.readRecords(

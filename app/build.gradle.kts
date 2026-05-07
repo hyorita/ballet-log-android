@@ -1,7 +1,16 @@
+import java.util.Properties
+
 plugins {
     alias(libs.plugins.android.application)
     alias(libs.plugins.kotlin.compose)
     id("com.google.devtools.ksp")
+}
+
+val localProperties = Properties().apply {
+    val localFile = rootProject.file("local.properties")
+    if (localFile.exists()) {
+        localFile.inputStream().use { load(it) }
+    }
 }
 
 android {
@@ -16,8 +25,8 @@ android {
         applicationId = "com.hyorita.balletlog"
         minSdk = 26
         targetSdk = 36
-        versionCode = 1
-        versionName = "1.0"
+        versionCode = 4
+        versionName = "1.6"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -25,13 +34,20 @@ android {
     signingConfigs {
         create("release") {
             storeFile = file("keystore/ballet-log-release.jks")
-            storePassword = project.findProperty("STORE_PASSWORD") as String? ?: ""
-            keyAlias = project.findProperty("KEY_ALIAS") as String? ?: ""
-            keyPassword = project.findProperty("KEY_PASSWORD") as String? ?: ""
+            storePassword = localProperties.getProperty("STORE_PASSWORD")
+                ?: System.getenv("STORE_PASSWORD") ?: ""
+            keyAlias = localProperties.getProperty("KEY_ALIAS")
+                ?: System.getenv("KEY_ALIAS") ?: ""
+            keyPassword = localProperties.getProperty("KEY_PASSWORD")
+                ?: System.getenv("KEY_PASSWORD") ?: ""
         }
     }
 
     buildTypes {
+        debug {
+            applicationIdSuffix = ".debug"
+            versionNameSuffix = "-debug"
+        }
         release {
             signingConfig = signingConfigs.getByName("release")
             isMinifyEnabled = true
@@ -109,7 +125,7 @@ tasks.whenTaskAdded {
             val apkDir = file("build/outputs/apk/release")
             apkDir.listFiles()?.forEach { file ->
                 if (file.name.endsWith(".apk")) {
-                    file.renameTo(File(apkDir, "BalletLog-1.0.apk"))
+                    file.renameTo(File(apkDir, "BalletLog-1.6.apk"))
                 }
             }
         }

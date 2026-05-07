@@ -1,11 +1,65 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Ballet Log</string>
+    <string name="app_name">발레 로그</string>
 
     <!-- Navigation -->
     <string name="nav_log">로그</string>
+    <string name="nav_class">클래스</string>
     <string name="nav_notes">노트</string>
     <string name="nav_history">기록</string>
+
+    <!-- Photo Log -->
+    <string name="photolog_new">새 로그</string>
+    <string name="photolog_settings">설정</string>
+    <string name="photolog_empty_title">아직 로그가 없어요</string>
+    <string name="photolog_empty_hint">+ 버튼으로 첫 로그를 시작해보세요</string>
+    <string name="photolog_close">닫기</string>
+    <string name="photolog_more">더보기</string>
+    <string name="photolog_favorite">즐겨찾기</string>
+    <string name="photolog_edit">편집</string>
+    <string name="photolog_delete_title">이 로그를 삭제할까요?</string>
+    <string name="photolog_meta_text">텍스트</string>
+    <string name="photolog_meta_workout">운동</string>
+    <string name="photolog_meta_studio">학원</string>
+    <string name="photolog_meta_level">레벨</string>
+    <string name="photolog_meta_teacher">선생님</string>
+    <string name="photolog_studio_placeholder">발레 학원</string>
+    <string name="photolog_caption_color">글자 색</string>
+    <string name="photolog_clear_workout">운동 정보 지우기</string>
+    <string name="photolog_manual_entry">직접 입력</string>
+    <string name="photolog_recent_tags">최근 입력</string>
+    <string name="photolog_tag_delete_title">태그를 삭제할까요?</string>
+    <string name="photolog_share">공유</string>
+    <string name="history_photo_logs">포토 로그</string>
+
+    <!-- Settings -->
+    <string name="settings_profile">프로필</string>
+    <string name="settings_username_placeholder">아이디</string>
+    <string name="settings_backup">백업</string>
+    <string name="settings_export_data">데이터 내보내기</string>
+    <string name="settings_import_data">데이터 가져오기</string>
+    <string name="settings_backup_footer">내보내기는 클래스, 노트, 사진을 단일 백업 파일로 묶어줍니다. 이메일로 보내거나 파일 앱에 저장한 뒤, 가져오기로 복원할 수 있어요.</string>
+    <string name="settings_about">정보</string>
+    <string name="settings_version">버전</string>
+    <string name="settings_developer">개발자</string>
+    <string name="settings_working">처리 중…</string>
+    <string name="settings_export_success">백업 파일이 만들어졌어요. 저장하거나 공유할 위치를 선택하세요.</string>
+    <string name="settings_export_failed">내보내기 실패: %1$s</string>
+    <string name="settings_import_success">복원이 완료되었어요. 데이터를 적용하려면 앱을 다시 실행해주세요.</string>
+    <string name="settings_import_failed">가져오기 실패: %1$s</string>
+    <string name="settings_invalid_archive">선택한 파일은 발레 로그 백업 파일이 아닙니다.</string>
+
+    <!-- In-app backup nudge -->
+    <string name="backup_banner_title">플레이스토어 출시 전에 백업해두세요</string>
+    <string name="backup_banner_message">정식 출시 시 앱을 새로 설치하게 돼요. 지금 내보내기를 해두면 한 번에 복원할 수 있어요.</string>
+    <string name="backup_banner_action">지금 백업하기</string>
+    <string name="backup_banner_dismiss">닫기</string>
+    <string name="notes_show_more">+%1$d개 더보기</string>
+    <string name="notes_show_less">접기</string>
+    <string name="notes_delete_tag_title">태그 삭제</string>
+    <string name="notes_delete_tag_message">\"%1$s\" 태그를 모든 노트에서 삭제할까요?</string>
+    <string name="class_log">클래스 로그</string>
+    <string name="untitled">제목 없음</string>
 
     <!-- Home Screen -->
     <string name="home_title">홈</string>

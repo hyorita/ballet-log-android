@@ -12,15 +12,32 @@ import android.graphics.Paint
 import android.graphics.Path
 import android.graphics.RectF
 import android.graphics.Typeface
+import android.graphics.Canvas
+import android.graphics.Color as AColor
+import android.graphics.LinearGradient
+import android.graphics.Rect
+import android.graphics.Shader
 import androidx.exifinterface.media.ExifInterface
 import androidx.core.content.FileProvider
+import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.PhotoManager
+import com.hyorita.balletlog.data.ProfilePreferences
 import com.hyorita.balletlog.data.model.ClassLog
+import com.hyorita.balletlog.data.model.PhotoLog
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
+
+/**
+ * Watermark handle for share images — mirrors iOS Settings instagramID
+ * preference. Falls back to "hyorita" when the user hasn't set one.
+ */
+private fun watermarkHandle(context: Context): String {
+    val id = ProfilePreferences.getInstagramId(context).trim()
+    return if (id.isEmpty()) "hyorita" else "@$id"
+}
 
 fun Context.findActivity(): Activity {
     var ctx = this
@@ -47,6 +64,306 @@ private fun loadCorrectlyOrientedBitmap(filePath: String): Bitmap? {
         ExifInterface.ORIENTATION_FLIP_VERTICAL -> matrix.preScale(1f, -1f)
     }
     return Bitmap.createBitmap(bitmap, 0, 0, bitmap.width, bitmap.height, matrix, true)
+}
+
+/**
+ * Render a PhotoLog full-bleed share image (photo + gradients + caption sticker
+ * + workout meta + tag chips + watermark) and fire ACTION_SEND. Mirrors iOS
+ * `PhotoLogCardView.renderShareImage` — output uses the device's screen aspect
+ * so the user sees the same composition they had on screen.
+ */
+fun sharePhotoLog(context: Context, log: PhotoLog) {
+    val d = context.resources.displayMetrics.density
+    val widthPx = context.resources.displayMetrics.widthPixels
+    val heightPx = context.resources.displayMetrics.heightPixels
+    val wf = widthPx.toFloat()
+    val hf = heightPx.toFloat()
+
+    val bmp = Bitmap.createBitmap(widthPx, heightPx, Bitmap.Config.ARGB_8888)
+    val canvas = Canvas(bmp)
+
+    // --- Photo (center-cropped to fill canvas) ---
+    val photoName = log.filteredPhotoPath ?: log.photoPath
+    val photoFile = PhotoLogStorage.fileFor(context, photoName)
+    val photo = if (photoFile.exists())
+        loadCorrectlyOrientedBitmap(photoFile.absolutePath)
+    else null
+    if (photo != null) {
+        val srcRatio = photo.width.toFloat() / photo.height.toFloat()
+        val dstRatio = wf / hf
+        val srcRect = if (srcRatio > dstRatio) {
+            val cropW = (photo.height * dstRatio).toInt()
+            val cropL = (photo.width - cropW) / 2
+            Rect(cropL, 0, cropL + cropW, photo.height)
+        } else {
+            val cropH = (photo.width / dstRatio).toInt()
+            val cropT = (photo.height - cropH) / 2
+            Rect(0, cropT, photo.width, cropT + cropH)
+        }
+        canvas.drawBitmap(
+            photo, srcRect, RectF(0f, 0f, wf, hf),
+            Paint(Paint.FILTER_BITMAP_FLAG)
+        )
+        photo.recycle()
+    } else {
+        canvas.drawColor(AColor.BLACK)
+    }
+
+    // --- Top gradient (40% height) ---
+    val topGrad = LinearGradient(
+        0f, 0f, 0f, hf * 0.4f,
+        intArrayOf(AColor.argb(153, 0, 0, 0), AColor.TRANSPARENT),
+        floatArrayOf(0f, 1f),
+        Shader.TileMode.CLAMP
+    )
+    canvas.drawRect(0f, 0f, wf, hf * 0.4f, Paint().apply { shader = topGrad })
+
+    // --- Bottom gradient (25% height) ---
+    val bottomGrad = LinearGradient(
+        0f, hf * 0.75f, 0f, hf,
+        intArrayOf(AColor.TRANSPARENT, AColor.argb(224, 0, 0, 0)),
+        floatArrayOf(0f, 1f),
+        Shader.TileMode.CLAMP
+    )
+    canvas.drawRect(0f, hf * 0.75f, wf, hf, Paint().apply { shader = bottomGrad })
+
+    // --- Caption sticker ---
+    if (log.caption.isNotEmpty()) {
+        val baseSize = when {
+            log.caption.length <= 60 -> 22 * d
+            log.caption.length <= 120 -> 19 * d
+            else -> 16 * d
+        }
+        val textSize = baseSize * log.captionScale.toFloat()
+        val captionColor = if (log.captionIsWhite) AColor.WHITE else AColor.BLACK
+        val shadowColor = if (log.captionIsWhite)
+            AColor.argb(128, 0, 0, 0) else AColor.argb(140, 255, 255, 255)
+        val captionPaint = Paint().apply {
+            color = captionColor
+            this.textSize = textSize
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.CENTER
+            setShadowLayer(8f, 0f, 1f, shadowColor)
+        }
+        val maxLineWidth = wf - 48 * d
+        val lines = wrapLines(log.caption, captionPaint, maxLineWidth, 8)
+        val lineH = textSize * 1.2f
+        val totalH = lineH * lines.size
+        val cx = wf / 2f + (log.captionX * d).toFloat()
+        val centerY = hf / 2f + (log.captionY * d).toFloat()
+        var ly = centerY - totalH / 2 + textSize * 0.85f
+        for (line in lines) {
+            canvas.drawText(line, cx, ly, captionPaint)
+            ly += lineH
+        }
+    }
+
+    // --- Layout sizes (mirrors PhotoLogCard) ---
+    val visibleTags = log.tags.filter { it.isNotBlank() }
+    val hasWorkout = log.kcal != null || log.durationMin != null ||
+        log.avgBPM != null || log.maxBPM != null
+    val hasTags = visibleTags.isNotEmpty()
+    val metaBottomDp = when {
+        hasWorkout && hasTags -> 124f
+        hasWorkout -> 64f
+        hasTags -> 118f
+        else -> 64f
+    }
+
+    // --- Bottom-right meta block ---
+    // PhotoLogCard aligns this column to BottomEnd with padding bottom = metaBottomDp,
+    // so the column GROWS UPWARD from there. Drawing is done bottom-up
+    // (subStats → kcal → date) to mirror that anchor.
+    val metaRight = wf - 18 * d
+    val columnBottom = hf - metaBottomDp * d
+    var ry = columnBottom
+
+    val subStats = buildList {
+        log.durationMin?.let { add("${it}min") }
+        log.avgBPM?.let { add("avg $it") }
+        log.maxBPM?.let { add("max $it") }
+    }
+    if (subStats.isNotEmpty()) {
+        val subPaint = Paint().apply {
+            color = AColor.argb(217, 255, 255, 255)
+            textSize = 12 * d
+            isAntiAlias = true
+            textAlign = Paint.Align.RIGHT
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            setShadowLayer(2f, 0f, 1f, AColor.argb(102, 0, 0, 0))
+        }
+        canvas.drawText(subStats.joinToString(" · "), metaRight, ry, subPaint)
+        ry -= 14 * d + 4 * d  // text height + spacing
+    }
+
+    log.kcal?.let { k ->
+        val kPaint = Paint().apply {
+            color = AColor.WHITE
+            textSize = 56 * d
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+            textAlign = Paint.Align.RIGHT
+            setShadowLayer(2f, 0f, 1f, AColor.argb(102, 0, 0, 0))
+        }
+        val labelPaint = Paint().apply {
+            color = AColor.argb(217, 255, 255, 255)
+            textSize = 16 * d
+            isAntiAlias = true
+            textAlign = Paint.Align.RIGHT
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        val labelText = "kcal"
+        val labelW = labelPaint.measureText(labelText)
+        canvas.drawText("$k", metaRight - labelW - 4 * d, ry, kPaint)
+        canvas.drawText(labelText, metaRight, ry, labelPaint)
+        ry -= 56 * d + 4 * d  // big number height + spacing
+    }
+
+    val datePaint = Paint().apply {
+        color = AColor.argb(229, 255, 255, 255)
+        textSize = 12 * d
+        isAntiAlias = true
+        textAlign = Paint.Align.RIGHT
+        setShadowLayer(2f, 0f, 0f, AColor.argb(102, 0, 0, 0))
+    }
+    val dateStr = SimpleDateFormat("EEE, MMM d, yyyy", Locale.getDefault())
+        .format(Date(log.date))
+    canvas.drawText(dateStr, metaRight, ry, datePaint)
+
+    // --- Tag chips (right-aligned bottom row, with 0.5dp divider) ---
+    if (hasTags) {
+        val chipBgPaint = Paint().apply {
+            color = AColor.argb(46, 255, 255, 255)
+            isAntiAlias = true
+        }
+        val chipTextPaint = Paint().apply {
+            color = AColor.WHITE
+            textSize = 12 * d
+            isAntiAlias = true
+            typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        }
+        val divPaint = Paint().apply {
+            color = AColor.argb(46, 255, 255, 255)
+            strokeWidth = 0.5f * d
+        }
+        val chipBaseline = hf - 82 * d
+        val chipPadH = 10 * d
+        val chipPadV = 5 * d
+        val ascent = chipTextPaint.fontMetrics.ascent
+        val descent = chipTextPaint.fontMetrics.descent
+        val chipH = (descent - ascent) + chipPadV * 2
+        val rowTop = chipBaseline - chipH
+        // Divider line just above the chip row
+        canvas.drawLine(16 * d, rowTop - 8 * d, wf - 16 * d, rowTop - 8 * d, divPaint)
+
+        var rightCursor = wf - 16 * d
+        for (tag in visibleTags.reversed()) {
+            val tw = chipTextPaint.measureText(tag)
+            val chipW = tw + chipPadH * 2
+            val left = rightCursor - chipW
+            val rect = RectF(left, rowTop, rightCursor, rowTop + chipH)
+            canvas.drawRoundRect(rect, chipH / 2, chipH / 2, chipBgPaint)
+            canvas.drawText(
+                tag,
+                left + chipPadH,
+                rowTop + chipPadV - ascent,
+                chipTextPaint
+            )
+            rightCursor = left - 6 * d
+        }
+    }
+
+    // --- Watermark (bottom center) ---
+    val wmPaint = Paint().apply {
+        color = AColor.argb(191, 255, 255, 255)
+        textSize = 11 * d
+        isAntiAlias = true
+        textAlign = Paint.Align.CENTER
+        typeface = Typeface.create(Typeface.DEFAULT, Typeface.BOLD)
+        setShadowLayer(3f, 0f, 1f, AColor.argb(140, 0, 0, 0))
+    }
+    canvas.drawText("Ballet Log • ${watermarkHandle(context)}", wf / 2f, hf - 16 * d, wmPaint)
+
+    // --- Save & share ---
+    val file = File(context.cacheDir, "photolog_share.jpg")
+    FileOutputStream(file).use { bmp.compress(Bitmap.CompressFormat.JPEG, 90, it) }
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/jpeg"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newUri(context.contentResolver, "Ballet Log", uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(Intent.createChooser(intent, "Ballet Log"))
+}
+
+/** Greedy word-wrap that keeps lines within `maxWidth`, capped at `maxLines`. */
+private fun wrapLines(text: String, paint: Paint, maxWidth: Float, maxLines: Int): List<String> {
+    val words = text.split(' ')
+    val lines = mutableListOf<String>()
+    var current = StringBuilder()
+    for (w in words) {
+        val candidate = if (current.isEmpty()) w else "$current $w"
+        if (paint.measureText(candidate) <= maxWidth) {
+            current = StringBuilder(candidate)
+        } else {
+            if (current.isNotEmpty()) lines.add(current.toString())
+            current = StringBuilder(w)
+            if (lines.size == maxLines - 1) break
+        }
+    }
+    if (current.isNotEmpty() && lines.size < maxLines) lines.add(current.toString())
+    return lines.ifEmpty { listOf(text) }
+}
+
+/**
+ * Share a captured PhotoLog bitmap. Adds a small bottom-center watermark
+ * matching iOS PhotoLogCardView.shareWatermark, then drops the result into the
+ * cache and fires ACTION_SEND.
+ */
+fun sharePhotoLogBitmap(context: Context, bitmap: Bitmap) {
+    val withWatermark = applyPhotoLogWatermark(context, bitmap)
+    val file = File(context.cacheDir, "photolog_share.jpg")
+    FileOutputStream(file).use {
+        withWatermark.compress(Bitmap.CompressFormat.JPEG, 90, it)
+    }
+    val uri = FileProvider.getUriForFile(
+        context,
+        "${context.packageName}.fileprovider",
+        file
+    )
+    val intent = Intent(Intent.ACTION_SEND).apply {
+        type = "image/jpeg"
+        putExtra(Intent.EXTRA_STREAM, uri)
+        clipData = ClipData.newUri(context.contentResolver, "Ballet Log", uri)
+        addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION or Intent.FLAG_ACTIVITY_NEW_TASK)
+    }
+    context.startActivity(Intent.createChooser(intent, "Ballet Log"))
+}
+
+private fun applyPhotoLogWatermark(context: Context, bitmap: Bitmap): Bitmap {
+    // Source bitmap may be hardware-backed (Coil/Capturable); convert to a
+    // mutable software bitmap before drawing on it.
+    val mutable = bitmap.copy(Bitmap.Config.ARGB_8888, true) ?: bitmap
+    val canvas = android.graphics.Canvas(mutable)
+    val text = "Ballet Log • ${watermarkHandle(context)}"
+    val paint = Paint().apply {
+        color = android.graphics.Color.WHITE
+        alpha = 191
+        textSize = 28f * (mutable.width / 1080f).coerceAtLeast(0.5f)
+        isAntiAlias = true
+        textAlign = Paint.Align.CENTER
+        setShadowLayer(4f, 0f, 1f, android.graphics.Color.argb(140, 0, 0, 0))
+    }
+    val x = mutable.width / 2f
+    val y = mutable.height - paint.textSize - mutable.height * 0.04f
+    canvas.drawText(text, x, y, paint)
+    return mutable
 }
 
 fun shareLogCard(context: Context, log: ClassLog, tabIndex: Int) {
@@ -313,7 +630,7 @@ fun shareLogCard(context: Context, log: ClassLog, tabIndex: Int) {
         isAntiAlias = true
         textAlign = Paint.Align.CENTER
     }
-    canvas.drawText("hyorita", wf / 2, hf - 20 * d, wmSubPaint)
+    canvas.drawText(watermarkHandle(context), wf / 2, hf - 20 * d, wmSubPaint)
 
     // --- Save & share ---
     val file = File(context.cacheDir, "ballet_log_share.png")
@@ -606,7 +923,7 @@ fun shareStatsCard(
         textAlign = Paint.Align.CENTER
         isAntiAlias = true
     }
-    canvas.drawText("Ballet Log • hyorita", wf / 2, hf - 16 * d, wmPaint)
+    canvas.drawText("Ballet Log • ${watermarkHandle(context)}", wf / 2, hf - 16 * d, wmPaint)
 
     // Save & share
     val file = File(context.cacheDir, "ballet_stats_share.png")

@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.google.gson.Gson
 import com.hyorita.balletlog.data.db.BalletLogDatabase
+import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.Note
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.first
@@ -12,12 +13,22 @@ import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class NotesViewModel(app: Application) : AndroidViewModel(app) {
-    private val dao = BalletLogDatabase.getInstance(app).noteDao()
+    private val db = BalletLogDatabase.getInstance(app)
+    private val dao = db.noteDao()
+    private val classLogDao = db.classLogDao()
 
     val notes = dao.getAll().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
+    )
+
+    // Surfaced so NoteDetail can look up `note.linkedLogId` and navigate to
+    // the actual ClassLog without each Note row having to hit the DB.
+    val classLogs = classLogDao.getAll().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList<ClassLog>()
     )
 
     fun insert(note: Note) = viewModelScope.launch { dao.insert(note) }
