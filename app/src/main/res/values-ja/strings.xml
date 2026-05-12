@@ -48,12 +48,12 @@
     <string name="settings_import_success">復元が完了しました。データを反映するためにアプリを再起動してください。</string>
     <string name="settings_import_failed">取り込みに失敗しました: %1$s</string>
     <string name="settings_invalid_archive">選択されたファイルは Ballet Log のバックアップではありません。</string>
+    <string name="settings_share_app">バレエログをシェア</string>
+    <string name="settings_share_message">バレエログを使ってみませんか — バレエレッスン専用のシンプルな日記アプリです。</string>
+    <string name="settings_share_footer">気に入ったらバレエ仲間にシェアしてください。</string>
 
-    <!-- In-app backup nudge -->
-    <string name="backup_banner_title">Play ストア公開前にバックアップ</string>
-    <string name="backup_banner_message">公開時はアプリの再インストールが必要です。今のうちに書き出しておけば、ワンタップで復元できます。</string>
-    <string name="backup_banner_action">今すぐバックアップ</string>
-    <string name="backup_banner_dismiss">閉じる</string>
+    <!-- PhotoLog tutorial -->
+    <string name="photolog_tutorial_tap_here">ここをタップして最初のログを始めましょう!</string>
     <string name="notes_show_more">他%1$d件</string>
     <string name="notes_show_less">折りたたむ</string>
     <string name="notes_delete_tag_title">タグを削除</string>
@@ -68,7 +68,7 @@
     <string name="recent">最近</string>
     <string name="favorites">お気に入り</string>
     <string name="no_classes_logged_yet">まだレッスンの記録がありません</string>
-    <string name="tap_record_class">次のバーレッスンの後に「レッスンを記録」をタップ</string>
+    <string name="tap_record_class">+ ボタンでレッスンを記録</string>
 
     <!-- Editor Screen -->
     <string name="new_class">新規レッスン</string>
@@ -104,7 +104,7 @@
     <string name="new_note">新規メモ</string>
     <string name="edit_note">メモを編集</string>
     <string name="no_notes_yet">メモはまだありません</string>
-    <string name="tap_new_note">「新規メモ」をタップしてメモを残しましょう</string>
+    <string name="tap_new_note">+ ボタンでメモを残す</string>
     <string name="search">検索</string>
     <string name="no_results">結果なし</string>
     <string name="what_to_remember">何を覚えておきたいですか？</string>

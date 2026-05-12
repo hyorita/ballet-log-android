@@ -345,6 +345,45 @@ fun HistoryScreen(
                 }
             } else {
 
+            // Photo Logs 섹션 — first (iOS 1.6.1 reorder)
+            if (displayPhotoLogs.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.PhotoLibrary,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.history_photo_logs),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                        Text(
+                            "${displayPhotoLogs.size}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+                items(displayPhotoLogs, key = { "photo-${it.id}" }) { p ->
+                    HistoryPhotoLogBanner(
+                        photoLog = p,
+                        onTap = { selectedPhotoLog = p }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+
             // Classes 섹션
             item {
                 Row(
@@ -384,45 +423,6 @@ fun HistoryScreen(
                         log = log,
                         onTap = { selectedLog = log; showDetail = true },
                         modifier = Modifier.padding(horizontal = 16.dp)
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
-
-            // Photo Logs 섹션 — full-width banner cards (iOS HistoryView parity)
-            if (displayPhotoLogs.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier
-                            .fillMaxWidth()
-                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                        horizontalArrangement = Arrangement.SpaceBetween,
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Row(verticalAlignment = Alignment.CenterVertically) {
-                            Icon(
-                                Icons.Default.PhotoLibrary,
-                                contentDescription = null,
-                                modifier = Modifier.size(18.dp)
-                            )
-                            Spacer(Modifier.width(6.dp))
-                            Text(
-                                stringResource(R.string.history_photo_logs),
-                                style = MaterialTheme.typography.titleMedium,
-                                fontWeight = FontWeight.Bold
-                            )
-                        }
-                        Text(
-                            "${displayPhotoLogs.size}",
-                            style = MaterialTheme.typography.bodySmall,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                }
-                items(displayPhotoLogs, key = { "photo-${it.id}" }) { p ->
-                    HistoryPhotoLogBanner(
-                        photoLog = p,
-                        onTap = { selectedPhotoLog = p }
                     )
                     Spacer(Modifier.height(8.dp))
                 }

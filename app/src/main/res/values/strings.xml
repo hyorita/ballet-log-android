@@ -48,12 +48,12 @@
     <string name="settings_import_success">Restore complete. Please relaunch the app for the data to take effect.</string>
     <string name="settings_import_failed">Import failed: %1$s</string>
     <string name="settings_invalid_archive">Selected file is not a valid Ballet Log backup.</string>
+    <string name="settings_share_app">Share Ballet Log</string>
+    <string name="settings_share_message">Try Ballet Log — a simple journal for your ballet classes.</string>
+    <string name="settings_share_footer">Enjoying Ballet Log? Share it with a fellow dancer.</string>
 
-    <!-- In-app backup nudge (shown until first export) -->
-    <string name="backup_banner_title">Back up before Play Store launch</string>
-    <string name="backup_banner_message">When the Play Store version goes live, exporting now lets you restore everything in one tap.</string>
-    <string name="backup_banner_action">Back up now</string>
-    <string name="backup_banner_dismiss">Dismiss</string>
+    <!-- PhotoLog tutorial -->
+    <string name="photolog_tutorial_tap_here">Tap here to start your first log!</string>
     <string name="notes_show_more">+%1$d more</string>
     <string name="notes_show_less">Show less</string>
     <string name="notes_delete_tag_title">Delete tag</string>
@@ -68,7 +68,7 @@
     <string name="recent">Recent</string>
     <string name="favorites">Favorites</string>
     <string name="no_classes_logged_yet">No classes logged yet</string>
-    <string name="tap_record_class">Tap \"Record Class\" after your next barre</string>
+    <string name="tap_record_class">Tap + to record a class</string>
 
     <!-- Editor Screen -->
     <string name="new_class">New Class</string>
@@ -104,7 +104,7 @@
     <string name="new_note">New Note</string>
     <string name="edit_note">Edit Note</string>
     <string name="no_notes_yet">No notes yet</string>
-    <string name="tap_new_note">Tap \"New Note\" to jot something down</string>
+    <string name="tap_new_note">Tap + to jot something down</string>
     <string name="search">Search</string>
     <string name="no_results">No results</string>
     <string name="what_to_remember">What do you want to remember?</string>

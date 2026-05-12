@@ -48,12 +48,12 @@
     <string name="settings_import_success">복원이 완료되었어요. 데이터를 적용하려면 앱을 다시 실행해주세요.</string>
     <string name="settings_import_failed">가져오기 실패: %1$s</string>
     <string name="settings_invalid_archive">선택한 파일은 발레 로그 백업 파일이 아닙니다.</string>
+    <string name="settings_share_app">발레 로그 추천하기</string>
+    <string name="settings_share_message">발레 로그를 사용해보세요 — 발레 클래스를 위한 심플한 다이어리예요.</string>
+    <string name="settings_share_footer">발레 로그가 마음에 드신다면 함께 발레하는 친구에게 추천해주세요.</string>
 
-    <!-- In-app backup nudge -->
-    <string name="backup_banner_title">플레이스토어 출시 전에 백업해두세요</string>
-    <string name="backup_banner_message">정식 출시 시 앱을 새로 설치하게 돼요. 지금 내보내기를 해두면 한 번에 복원할 수 있어요.</string>
-    <string name="backup_banner_action">지금 백업하기</string>
-    <string name="backup_banner_dismiss">닫기</string>
+    <!-- PhotoLog tutorial -->
+    <string name="photolog_tutorial_tap_here">여기를 눌러 첫 로그를 시작해보세요!</string>
     <string name="notes_show_more">+%1$d개 더보기</string>
     <string name="notes_show_less">접기</string>
     <string name="notes_delete_tag_title">태그 삭제</string>
@@ -68,7 +68,7 @@
     <string name="recent">최근</string>
     <string name="favorites">즐겨찾기</string>
     <string name="no_classes_logged_yet">아직 기록된 수업이 없어요</string>
-    <string name="tap_record_class">\"수업 기록하기\"를 눌러 발레일지를 작성하세요</string>
+    <string name="tap_record_class">+ 버튼으로 새 수업을 기록해보세요</string>
 
     <!-- Editor Screen -->
     <string name="new_class">새 수업</string>
@@ -104,7 +104,7 @@
     <string name="new_note">새 메모</string>
     <string name="edit_note">메모 편집</string>
     <string name="no_notes_yet">아직 메모가 없어요</string>
-    <string name="tap_new_note">\"새 메모\"를 눌러 기록해보세요</string>
+    <string name="tap_new_note">+ 버튼으로 메모를 작성해보세요</string>
     <string name="search">검색</string>
     <string name="no_results">결과 없음</string>
     <string name="what_to_remember">어떤걸 기억하고 싶으세요?</string>

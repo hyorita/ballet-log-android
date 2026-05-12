@@ -1,5 +1,11 @@
 package com.hyorita.balletlog.ui.photolog
 
+import androidx.compose.animation.core.LinearEasing
+import androidx.compose.animation.core.RepeatMode
+import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.infiniteRepeatable
+import androidx.compose.animation.core.rememberInfiniteTransition
+import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -7,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -31,10 +38,9 @@ import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
-import com.hyorita.balletlog.data.BackupBannerPreferences
 import com.hyorita.balletlog.data.PhotoLogStorage
+import com.hyorita.balletlog.data.TutorialPreferences
 import com.hyorita.balletlog.data.model.PhotoLog
-import com.hyorita.balletlog.ui.common.BackupBanner
 import com.hyorita.balletlog.ui.settings.SettingsScreen
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -51,7 +57,8 @@ fun PhotoLogScreen(
     var viewerStartId by remember { mutableStateOf<String?>(null) }
     var showSettings by remember { mutableStateOf(false) }
     val context = LocalContext.current
-    var bannerVisible by remember { mutableStateOf(BackupBannerPreferences.shouldShow(context)) }
+    var hasSeenTutorial by remember { mutableStateOf(TutorialPreferences.hasSeenLogTutorial(context)) }
+    val showTutorial = !hasSeenTutorial && logs.isEmpty()
 
     Scaffold(
         topBar = {
@@ -63,8 +70,19 @@ fun PhotoLogScreen(
                     )
                 },
                 navigationIcon = {
-                    IconButton(onClick = { editorTarget = EditorTarget.New }) {
-                        Icon(Icons.Default.Add, contentDescription = stringResource(R.string.photolog_new))
+                    IconButton(onClick = {
+                        if (!hasSeenTutorial) {
+                            TutorialPreferences.setLogTutorialSeen(context)
+                            hasSeenTutorial = true
+                        }
+                        editorTarget = EditorTarget.New
+                    }) {
+                        Icon(
+                            Icons.Default.Add,
+                            contentDescription = stringResource(R.string.photolog_new),
+                            tint = if (showTutorial) MaterialTheme.colorScheme.primary
+                            else LocalContentColor.current
+                        )
                     }
                 },
                 actions = {
@@ -79,14 +97,8 @@ fun PhotoLogScreen(
         }
     ) { padding ->
         Column(modifier = Modifier.padding(padding).fillMaxSize()) {
-            if (bannerVisible) {
-                BackupBanner(
-                    onTapAction = { showSettings = true },
-                    onDismiss = {
-                        BackupBannerPreferences.setDismissed(context)
-                        bannerVisible = false
-                    }
-                )
+            if (showTutorial) {
+                TutorialArrow()
             }
             if (logs.isEmpty()) {
                 EmptyState()
@@ -143,21 +155,56 @@ fun PhotoLogScreen(
 
     if (showSettings) {
         Dialog(
-            onDismissRequest = {
-                showSettings = false
-                // Re-check whether the banner should still show (export may
-                // have happened inside Settings, which marks the pref).
-                bannerVisible = BackupBannerPreferences.shouldShow(context)
-            },
+            onDismissRequest = { showSettings = false },
             properties = DialogProperties(usePlatformDefaultWidth = false)
         ) {
             Surface(modifier = Modifier.fillMaxSize()) {
-                SettingsScreen(onDismiss = {
-                    showSettings = false
-                    bannerVisible = BackupBannerPreferences.shouldShow(context)
-                })
+                SettingsScreen(onDismiss = { showSettings = false })
             }
         }
+    }
+}
+
+@Composable
+private fun TutorialArrow() {
+    val infinite = rememberInfiniteTransition(label = "tutorialBounce")
+    val bounce by infinite.animateFloat(
+        initialValue = 0f,
+        targetValue = -4f,
+        animationSpec = infiniteRepeatable(
+            animation = tween(700, easing = androidx.compose.animation.core.LinearEasing),
+            repeatMode = RepeatMode.Reverse
+        ),
+        label = "bounceOffset"
+    )
+    val accent = Color(0xFFFF9800)
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(start = 4.dp, end = 16.dp, top = 6.dp, bottom = 6.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        // 48dp wide so the arrow lines up with the navigationIcon's IconButton above.
+        Box(
+            modifier = Modifier.width(48.dp),
+            contentAlignment = Alignment.Center
+        ) {
+            Icon(
+                Icons.Default.ArrowUpward,
+                contentDescription = null,
+                tint = accent,
+                modifier = Modifier
+                    .size(16.dp)
+                    .offset(y = bounce.dp)
+            )
+        }
+        Spacer(Modifier.width(4.dp))
+        Text(
+            stringResource(R.string.photolog_tutorial_tap_here),
+            color = accent,
+            fontWeight = FontWeight.Bold,
+            style = MaterialTheme.typography.bodyMedium
+        )
     }
 }
 

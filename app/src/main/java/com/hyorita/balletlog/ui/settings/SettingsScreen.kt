@@ -10,10 +10,12 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
+import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
+import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -28,7 +30,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.hyorita.balletlog.R
-import com.hyorita.balletlog.data.BackupBannerPreferences
 import com.hyorita.balletlog.data.BackupManager
 import com.hyorita.balletlog.data.ProfilePreferences
 import kotlinx.coroutines.launch
@@ -53,7 +54,6 @@ fun SettingsScreen(
             isWorking = true
             statusMessage = try {
                 BackupManager.exportToUri(context, uri)
-                BackupBannerPreferences.markExported(context)
                 context.getString(R.string.settings_export_success)
             } catch (e: Throwable) {
                 context.getString(R.string.settings_export_failed, e.message ?: "")
@@ -230,6 +230,41 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+
+            // Share Ballet Log
+            item {
+                val shareSubject = stringResource(R.string.app_name)
+                val shareBody = stringResource(R.string.settings_share_message) +
+                    "\nhttps://play.google.com/store/apps/details?id=com.hyorita.balletlog"
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    SettingsRow(
+                        icon = Icons.Default.Favorite,
+                        title = stringResource(R.string.settings_share_app),
+                        enabled = true,
+                        onClick = {
+                            val intent = Intent(Intent.ACTION_SEND).apply {
+                                type = "text/plain"
+                                putExtra(Intent.EXTRA_SUBJECT, shareSubject)
+                                putExtra(Intent.EXTRA_TEXT, shareBody)
+                            }
+                            context.startActivity(
+                                Intent.createChooser(intent, shareSubject)
+                            )
+                        }
+                    )
+                }
+                Text(
+                    stringResource(R.string.settings_share_footer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
 
             // About
