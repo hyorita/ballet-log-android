@@ -54,6 +54,13 @@
 
     <!-- PhotoLog tutorial -->
     <string name="photolog_tutorial_tap_here">여기를 눌러 첫 로그를 시작해보세요!</string>
+
+    <!-- Combination terms (chip bar language preference) -->
+    <string name="settings_combo_terms">콤비네이션 용어</string>
+    <string name="settings_combo_terms_footer">수업 노트 편집 시 발레 용어 칩 바에 표시할 언어입니다.</string>
+    <string name="term_language_system">시스템</string>
+    <string name="term_language_english">English</string>
+    <string name="term_language_korean">한국어</string>
     <string name="notes_show_more">+%1$d개 더보기</string>
     <string name="notes_show_less">접기</string>
     <string name="notes_delete_tag_title">태그 삭제</string>

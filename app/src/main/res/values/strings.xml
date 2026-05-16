@@ -54,6 +54,13 @@
 
     <!-- PhotoLog tutorial -->
     <string name="photolog_tutorial_tap_here">Tap here to start your first log!</string>
+
+    <!-- Combination terms (chip bar language preference) -->
+    <string name="settings_combo_terms">Combination terms</string>
+    <string name="settings_combo_terms_footer">Language used for ballet term chips when editing class notes.</string>
+    <string name="term_language_system">System</string>
+    <string name="term_language_english">English</string>
+    <string name="term_language_korean">한국어</string>
     <string name="notes_show_more">+%1$d more</string>
     <string name="notes_show_less">Show less</string>
     <string name="notes_delete_tag_title">Delete tag</string>

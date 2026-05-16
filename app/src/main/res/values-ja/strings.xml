@@ -54,6 +54,13 @@
 
     <!-- PhotoLog tutorial -->
     <string name="photolog_tutorial_tap_here">ここをタップして最初のログを始めましょう!</string>
+
+    <!-- Combination terms (chip bar language preference) -->
+    <string name="settings_combo_terms">コンビネーション用語</string>
+    <string name="settings_combo_terms_footer">クラスノート編集時にバレエ用語チップに表示する言語です。</string>
+    <string name="term_language_system">システム</string>
+    <string name="term_language_english">English</string>
+    <string name="term_language_korean">한국어</string>
     <string name="notes_show_more">他%1$d件</string>
     <string name="notes_show_less">折りたたむ</string>
     <string name="notes_delete_tag_title">タグを削除</string>

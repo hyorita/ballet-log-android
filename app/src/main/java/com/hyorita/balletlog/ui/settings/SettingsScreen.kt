@@ -32,6 +32,8 @@ import androidx.compose.ui.unit.dp
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.BackupManager
 import com.hyorita.balletlog.data.ProfilePreferences
+import com.hyorita.balletlog.data.TermLanguage
+import com.hyorita.balletlog.data.TermLanguagePreferences
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -42,6 +44,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     var instagramId by remember { mutableStateOf(ProfilePreferences.getInstagramId(context)) }
+    var termLanguage by remember { mutableStateOf(TermLanguagePreferences.get(context)) }
     var isWorking by remember { mutableStateOf(false) }
     var statusMessage by remember { mutableStateOf<String?>(null) }
     var showRestartDialog by remember { mutableStateOf(false) }
@@ -230,6 +233,50 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+
+            // Combination terms language
+            item {
+                SectionHeader(stringResource(R.string.settings_combo_terms))
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp)
+                    ) {
+                        val options = listOf(
+                            TermLanguage.System to stringResource(R.string.term_language_system),
+                            TermLanguage.English to stringResource(R.string.term_language_english),
+                            TermLanguage.Korean to stringResource(R.string.term_language_korean)
+                        )
+                        options.forEachIndexed { index, (lang, label) ->
+                            SegmentedButton(
+                                selected = termLanguage == lang,
+                                onClick = {
+                                    termLanguage = lang
+                                    TermLanguagePreferences.set(context, lang)
+                                },
+                                shape = SegmentedButtonDefaults.itemShape(
+                                    index = index,
+                                    count = options.size
+                                )
+                            ) {
+                                Text(label)
+                            }
+                        }
+                    }
+                }
+                Text(
+                    stringResource(R.string.settings_combo_terms_footer),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
 
             // Share Ballet Log

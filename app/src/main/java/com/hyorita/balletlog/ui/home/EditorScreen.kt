@@ -91,10 +91,43 @@ fun EditorScreen(
         barreSteps.map { it.name + it.note } != existingLog.barreSteps.map { it.name + it.note } ||
         centerSteps.map { it.name + it.note } != existingLog.centerSteps.map { it.name + it.note }
 
-    BackHandler(enabled = hasChanges || fetchedWorkout != null) {
+    // Auto-save mirrors iOS persistInPlace: existing logs (or new logs that
+    // already got an id via Find-Ballet-Workout) are updated on dismiss.
+    // Pure-new drafts are NOT auto-saved — matches iOS to avoid ghost logs.
+    var didSaveExplicitly by remember { mutableStateOf(false) }
+    val persistInPlace = persist@{
+        val targetId = savedLogId ?: existingLog?.id ?: return@persist
+        val gson = com.google.gson.Gson()
+        val updated = ClassLog.create(
+            date = date,
+            barreSteps = barreSteps.toList(),
+            centerSteps = centerSteps.toList(),
+            photos = photos.toList(),
+            barreMusic = barreMusic,
+            centerMusic = centerMusic,
+            notes = notes,
+            favorite = favorite
+        ).copy(
+            id = targetId,
+            workoutJson = fetchedWorkout?.let { gson.toJson(it) }
+                ?: existingLog?.workoutJson
+        )
+        vm.updateLog(updated)
+    }
+
+    DisposableEffect(Unit) {
+        onDispose {
+            if (!didSaveExplicitly) persistInPlace()
+        }
+    }
+
+    // Discard confirmation only when the user is creating a brand-new log
+    // and hasn't saved it yet. Edits to existing logs auto-save on dispose.
+    val needsDiscardConfirm = existingLog == null && savedLogId == null && hasChanges
+    BackHandler(enabled = needsDiscardConfirm || fetchedWorkout != null) {
         when {
             fetchedWorkout != null -> onDismiss(true)
-            hasChanges -> showDiscardAlert = true
+            needsDiscardConfirm -> showDiscardAlert = true
         }
     }
 
@@ -123,9 +156,11 @@ fun EditorScreen(
                 },
                 navigationIcon = {
                     IconButton(onClick = {
-                        if (fetchedWorkout != null) onDismiss(true)
-                        else if (hasChanges) showDiscardAlert = true
-                        else onDismiss(false)
+                        when {
+                            fetchedWorkout != null -> onDismiss(true)
+                            needsDiscardConfirm -> showDiscardAlert = true
+                            else -> onDismiss(false)
+                        }
                     }) {
                         Icon(Icons.Default.Close, contentDescription = stringResource(R.string.cancel))
                     }
@@ -168,6 +203,7 @@ fun EditorScreen(
                             )
                         }
                         if (savedLogId == null) vm.insertLog(newLog) else vm.updateLog(newLog)
+                        didSaveExplicitly = true
                         onDismiss(true)
                     }) {
                         Text(stringResource(R.string.save), fontWeight = FontWeight.SemiBold)
