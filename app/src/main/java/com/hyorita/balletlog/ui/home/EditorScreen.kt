@@ -7,6 +7,10 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.relocation.BringIntoViewRequester
+import androidx.compose.foundation.relocation.bringIntoViewRequester
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
@@ -25,12 +29,16 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.text.TextRange
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
+import androidx.compose.ui.text.input.TextFieldValue
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -39,13 +47,15 @@ import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.DefaultSteps
 import com.hyorita.balletlog.data.PhotoManager
+import com.hyorita.balletlog.data.TermLanguagePreferences
+import com.hyorita.balletlog.data.TermStore
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.PhotoItem
 import com.hyorita.balletlog.data.model.Step
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun EditorScreen(
     existingLog: ClassLog?,
@@ -141,13 +151,27 @@ fun EditorScreen(
         }
     } // 0 = Barre, 1 = Center
 
+    // Chip bar state — the focused step.note field, its TextFieldValue cache,
+    // and the live currentStepName/wordFragment in TermStore.
+    LaunchedEffect(Unit) { TermStore.loadIfNeeded(context) }
+    var activeStepId by remember { mutableStateOf<String?>(null) }
+    val stepTfvs = remember { mutableStateMapOf<String, TextFieldValue>() }
+    DisposableEffect(Unit) {
+        onDispose { TermStore.clearContext() }
+    }
+
     val dateFormat = SimpleDateFormat("MMM d, yyyy", Locale.getDefault())
     val currentSteps = if (tabIndex == 0) barreSteps else centerSteps
 
+    // Collapse the top bar on scroll so the editor's input area gets more
+    // room when the user starts typing / scrolling steps.
+    val topBarScrollBehavior = TopAppBarDefaults.enterAlwaysScrollBehavior()
     Scaffold(
-        modifier = Modifier.imePadding(),
+        contentWindowInsets = WindowInsets(0, 0, 0, 0),
+        modifier = Modifier.nestedScroll(topBarScrollBehavior.nestedScrollConnection),
         topBar = {
             TopAppBar(
+                scrollBehavior = topBarScrollBehavior,
                 title = {
                     Text(
                         if (existingLog == null) stringResource(R.string.new_class) else stringResource(R.string.edit_class),
@@ -212,11 +236,26 @@ fun EditorScreen(
             )
         }
     ) { padding ->
-        LazyColumn(
+        Box(
             modifier = Modifier
                 .fillMaxSize()
                 .padding(padding)
-                .background(MaterialTheme.colorScheme.surface),
+                .imePadding()
+                .background(MaterialTheme.colorScheme.surface)
+        ) {
+        val listState = androidx.compose.foundation.lazy.rememberLazyListState()
+        // LazyColumn items in order:
+        //   0  date
+        //   1? workout info (only when fetchedWorkout != null)
+        //   _  tab card
+        //   _? photos card (only when photos.isNotEmpty())
+        //   _+ items(currentSteps.size) — each step
+        // Steps start at this offset, computed reactively.
+        val stepIndexOffset = 1 + (if (fetchedWorkout != null) 1 else 0) +
+            1 + (if (photos.isNotEmpty()) 1 else 0)
+        LazyColumn(
+            state = listState,
+            modifier = Modifier.fillMaxSize(),
             contentPadding = PaddingValues(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 80.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
@@ -398,12 +437,53 @@ fun EditorScreen(
                             }
                         }
                         Spacer(Modifier.height(6.dp))
+                        // TextFieldValue keeps the caret so the chip bar can
+                        // replace the word fragment under the caret cleanly.
+                        val tfv = stepTfvs.getOrPut(step.id) {
+                            TextFieldValue(step.note, TextRange(step.note.length))
+                        }
+                        // External step.note changes (e.g. chip insert) must
+                        // propagate into the cached tfv.
+                        val syncedTfv = if (tfv.text != step.note) {
+                            TextFieldValue(step.note, TextRange(step.note.length))
+                                .also { stepTfvs[step.id] = it }
+                        } else tfv
+
+                        val scrollScope = rememberCoroutineScope()
                         OutlinedTextField(
-                            value = step.note,
-                            onValueChange = { currentSteps[index] = step.copy(note = it) },
+                            value = syncedTfv,
+                            onValueChange = { new ->
+                                stepTfvs[step.id] = new
+                                currentSteps[index] = step.copy(note = new.text)
+                                if (activeStepId == step.id) {
+                                    TermStore.setWordFragment(wordFragmentBeforeCaret(new))
+                                }
+                            },
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .heightIn(min = 56.dp),
+                                .heightIn(min = 56.dp)
+                                .onFocusChanged { state ->
+                                    if (state.hasFocus) {
+                                        activeStepId = step.id
+                                        TermStore.setStepName(step.name)
+                                        TermStore.setWordFragment(wordFragmentBeforeCaret(syncedTfv))
+                                        scrollScope.launch {
+                                            // Park the focused step at the
+                                            // top of the visible area so the
+                                            // user sees what they're editing
+                                            // instead of the page header.
+                                            listState.animateScrollToItem(
+                                                stepIndexOffset + index
+                                            )
+                                        }
+                                    } else if (activeStepId == step.id) {
+                                        // Only clear when the active field
+                                        // loses focus — not when a different
+                                        // step's blur fires.
+                                        activeStepId = null
+                                        TermStore.clearContext()
+                                    }
+                                },
                             placeholder = { Text(stringResource(R.string.combination_notes), style = MaterialTheme.typography.bodySmall) },
                             maxLines = 5,
                             keyboardOptions = KeyboardOptions(imeAction = ImeAction.Default),
@@ -528,6 +608,31 @@ fun EditorScreen(
                     Text(stringResource(R.string.find_ballet_workout))
                 }
             }
+        }
+
+        if (activeStepId != null) {
+            TermChipBar(
+                onInsertTerm = { term ->
+                    val id = activeStepId ?: return@TermChipBar
+                    val cur = stepTfvs[id] ?: return@TermChipBar
+                    val lang = TermLanguagePreferences.get(context)
+                    val newTfv = insertTermAtWordBoundary(cur, term.text(lang))
+                    stepTfvs[id] = newTfv
+                    val barreIdx = barreSteps.indexOfFirst { it.id == id }
+                    if (barreIdx >= 0) {
+                        barreSteps[barreIdx] = barreSteps[barreIdx].copy(note = newTfv.text)
+                    } else {
+                        val centerIdx = centerSteps.indexOfFirst { it.id == id }
+                        if (centerIdx >= 0) {
+                            centerSteps[centerIdx] = centerSteps[centerIdx].copy(note = newTfv.text)
+                        }
+                    }
+                    TermStore.setWordFragment("")
+                    TermStore.recordUsage(context, term)
+                },
+                modifier = Modifier.align(Alignment.BottomCenter)
+            )
+        }
         }
     }
 

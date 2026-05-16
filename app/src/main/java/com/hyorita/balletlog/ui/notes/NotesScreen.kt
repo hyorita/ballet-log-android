@@ -28,8 +28,6 @@ import androidx.compose.ui.platform.LocalSoftwareKeyboardController
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.ClassLog
@@ -179,51 +177,52 @@ fun NotesScreen(
         }
     }
 
-    // Detail
+    // Hide root NavBar whenever any of the full-screen overlays below are
+    // visible so they truly cover the screen and IME padding doesn't
+    // double-count the NavBar inset.
+    val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
+    val anyModalActive = showDetail || openedLinkedLog != null ||
+        showLinkedClassEditor || photoViewerStartIndex != null || showEditor
+    androidx.compose.runtime.DisposableEffect(anyModalActive) {
+        if (anyModalActive) bottomBarVisible.value = false
+        onDispose { bottomBarVisible.value = true }
+    }
+
     if (showDetail) {
         val note = selectedNote ?: return
         val liveNote = notes.find { it.id == note.id } ?: note
-        Dialog(
-            onDismissRequest = { showDetail = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                NoteDetailScreen(
-                    note = liveNote,
-                    classLogs = classLogs,
-                    onDismiss = { showDetail = false },
-                    onEdit = { showEditor = true },
-                    onDelete = { vm.delete(note); showDetail = false },
-                    onTogglePin = { vm.togglePin(note) },
-                    onOpenLog = { log -> openedLinkedLog = log },
-                    onOpenPhoto = { idx -> photoViewerStartIndex = idx }
-                )
-            }
+        androidx.activity.compose.BackHandler { showDetail = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            NoteDetailScreen(
+                note = liveNote,
+                classLogs = classLogs,
+                onDismiss = { showDetail = false },
+                onEdit = { showEditor = true },
+                onDelete = { vm.delete(note); showDetail = false },
+                onTogglePin = { vm.togglePin(note) },
+                onOpenLog = { log -> openedLinkedLog = log },
+                onOpenPhoto = { idx -> photoViewerStartIndex = idx }
+            )
         }
     }
 
-    // Linked ClassLog Detail (opened from a Note)
     openedLinkedLog?.let { log ->
         val liveLog = classLogs.find { it.id == log.id } ?: log
-        Dialog(
-            onDismissRequest = { openedLinkedLog = null },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                key(liveLog.workoutJson) {
-                    DetailScreen(
-                        log = liveLog,
-                        onDismiss = { openedLinkedLog = null },
-                        onEdit = { showLinkedClassEditor = true },
-                        onDelete = {
-                            homeVm.deleteLog(liveLog)
-                            openedLinkedLog = null
-                        },
-                        onToggleFavorite = { homeVm.toggleFavorite(liveLog) },
-                        onFetchWorkout = { homeVm.fetchAndSaveWorkout(liveLog) },
-                        onView = { homeVm.incrementViewCount(liveLog.id) }
-                    )
-                }
+        androidx.activity.compose.BackHandler { openedLinkedLog = null }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            key(liveLog.workoutJson) {
+                DetailScreen(
+                    log = liveLog,
+                    onDismiss = { openedLinkedLog = null },
+                    onEdit = { showLinkedClassEditor = true },
+                    onDelete = {
+                        homeVm.deleteLog(liveLog)
+                        openedLinkedLog = null
+                    },
+                    onToggleFavorite = { homeVm.toggleFavorite(liveLog) },
+                    onFetchWorkout = { homeVm.fetchAndSaveWorkout(liveLog) },
+                    onView = { homeVm.incrementViewCount(liveLog.id) }
+                )
             }
         }
     }
@@ -231,20 +230,13 @@ fun NotesScreen(
     if (showLinkedClassEditor) {
         val liveLog = openedLinkedLog?.let { sel -> classLogs.find { it.id == sel.id } }
             ?: openedLinkedLog
-        Dialog(
-            onDismissRequest = { showLinkedClassEditor = false },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
+        androidx.activity.compose.BackHandler { showLinkedClassEditor = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            EditorScreen(
+                existingLog = liveLog,
+                onDismiss = { _ -> showLinkedClassEditor = false },
+                vm = homeVm
             )
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                EditorScreen(
-                    existingLog = liveLog,
-                    onDismiss = { _ -> showLinkedClassEditor = false },
-                    vm = homeVm
-                )
-            }
         }
     }
 
@@ -252,13 +244,8 @@ fun NotesScreen(
         val note = selectedNote?.let { sel -> notes.find { it.id == sel.id } } ?: selectedNote
         val photos = note?.photoFileNames.orEmpty()
         if (photos.isNotEmpty()) {
-            Dialog(
-                onDismissRequest = { photoViewerStartIndex = null },
-                properties = DialogProperties(
-                    usePlatformDefaultWidth = false,
-                    decorFitsSystemWindows = false
-                )
-            ) {
+            androidx.activity.compose.BackHandler { photoViewerStartIndex = null }
+            Surface(modifier = Modifier.fillMaxSize()) {
                 NotePhotoViewer(
                     photoFileNames = photos,
                     startIndex = startIdx,
@@ -268,24 +255,16 @@ fun NotesScreen(
         }
     }
 
-    // Editor (note)
     if (showEditor) {
-        Dialog(
-            onDismissRequest = { showEditor = false },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
+        androidx.activity.compose.BackHandler { showEditor = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            NoteEditorScreen(
+                existingNote = selectedNote,
+                classLogs = classLogs,
+                allTags = allTags,
+                onDismiss = { showEditor = false },
+                vm = vm
             )
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                NoteEditorScreen(
-                    existingNote = selectedNote,
-                    classLogs = classLogs,
-                    allTags = allTags,
-                    onDismiss = { showEditor = false },
-                    vm = vm
-                )
-            }
         }
     }
 

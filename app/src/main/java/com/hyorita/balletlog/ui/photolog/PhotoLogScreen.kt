@@ -33,8 +33,6 @@ import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import kotlin.math.abs
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
@@ -112,14 +110,18 @@ fun PhotoLogScreen(
     }
 
     // Full-screen pageable card viewer
+    // Hide root NavBar whenever any inline overlay below is active so they
+    // cover the full screen and IME padding doesn't double-count its inset.
+    val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
+    val anyModalActive = viewerStartId != null || editorTarget != null || showSettings
+    androidx.compose.runtime.DisposableEffect(anyModalActive) {
+        if (anyModalActive) bottomBarVisible.value = false
+        onDispose { bottomBarVisible.value = true }
+    }
+
     viewerStartId?.let { startId ->
-        Dialog(
-            onDismissRequest = { viewerStartId = null },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
-        ) {
+        androidx.activity.compose.BackHandler { viewerStartId = null }
+        Surface(modifier = Modifier.fillMaxSize()) {
             PhotoLogPager(
                 logs = logs,
                 startId = startId,
@@ -138,13 +140,8 @@ fun PhotoLogScreen(
     }
 
     editorTarget?.let { target ->
-        Dialog(
-            onDismissRequest = { editorTarget = null },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
-        ) {
+        androidx.activity.compose.BackHandler { editorTarget = null }
+        Surface(modifier = Modifier.fillMaxSize()) {
             PhotoLogEditScreen(
                 target = target,
                 vm = vm,
@@ -154,13 +151,9 @@ fun PhotoLogScreen(
     }
 
     if (showSettings) {
-        Dialog(
-            onDismissRequest = { showSettings = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                SettingsScreen(onDismiss = { showSettings = false })
-            }
+        androidx.activity.compose.BackHandler { showSettings = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            SettingsScreen(onDismiss = { showSettings = false })
         }
     }
 }
