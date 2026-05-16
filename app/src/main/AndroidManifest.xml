@@ -2,8 +2,9 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <!-- 사진 접근 -->
-    <uses-permission android:name="android.permission.READ_MEDIA_IMAGES" />
+    <!-- Note: no READ_MEDIA_IMAGES — we use the system PhotoPicker
+         (ActivityResultContracts.PickMultipleVisualMedia) which grants
+         per-uri access without a runtime permission. -->
 
     <!-- YouTube thumbnail loading in note Reference Link cards -->
     <uses-permission android:name="android.permission.INTERNET" />
