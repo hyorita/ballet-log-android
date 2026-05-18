@@ -159,6 +159,8 @@ object BalletTerms {
         BalletTerm("tombé", "톰베"),
         BalletTerm("coupé", "꾸뻬"),
         BalletTerm("passé", "파세"),
+        BalletTerm("passé par terre", "파세파테르"),
+        BalletTerm("temps lié", "탕리에"),
         BalletTerm("failli", "화이"),
         BalletTerm("penché", "팡쉐"),
         BalletTerm("flic-flac", "플릭플락"),
@@ -186,14 +188,14 @@ object BalletTerms {
      * Most specific keywords come first.
      */
     private val featuredByKeyword: List<Pair<String, List<String>>> = listOf(
-        "adagio" to listOf("croisé", "écarté", "effacé", "devant", "derrière", "passé", "à la seconde", "promenade", "allongé"),
+        "adagio" to listOf("croisé", "écarté", "effacé", "devant", "derrière", "passé", "temps lié", "à la seconde", "promenade", "allongé"),
         "allegro 1" to listOf("sauté", "changement", "1st", "2nd", "4th", "5th", "entrechat", "soubresaut"),
         "allegro 2" to listOf("glissade", "assemblé", "sauté", "soubresaut", "tombé", "brisé", "pas de bourrée"),
         "allegro 3" to listOf("glissade", "jeté", "temps levé", "2nd", "pas de bourrée", "brisé"),
         "medium allegro" to listOf("fermé", "failli", "assemblé", "tombé", "pas de bourrée", "grand", "ouvert", "pas de chat"),
         "grand allegro" to listOf("tombé", "pas de bourrée", "glissade", "grand", "pas de chat", "jeté", "piqué", "arabesque", "chassé", "entrelacé", "en tournant"),
         "waltz" to listOf("balancé", "tombé", "pas de bourrée", "preparation", "4th", "pirouette", "en dehors", "en dedans", "renversé"),
-        "à terre" to listOf("rond", "grand", "plié", "devant", "derrière", "battement", "passé", "développé", "écarté"),
+        "à terre" to listOf("rond", "passé par terre", "grand", "plié", "devant", "derrière", "battement", "passé", "développé", "écarté"),
         "en l'air" to listOf("passé", "développé", "en dehors", "en dedans", "relevé", "up", "5th"),
         "grand battement" to listOf("devant", "à la seconde", "derrière", "1st", "5th", "en croix", "en avant", "en arrière", "de côté"),
         "développé" to listOf("passé", "développé", "enveloppé", "relevé lent", "rond", "devant", "à la seconde", "derrière", "écarté"),
