@@ -25,8 +25,8 @@ android {
         applicationId = "com.hyorita.balletlog"
         minSdk = 26
         targetSdk = 36
-        versionCode = 6
-        versionName = "1.6.1"
+        versionCode = 7
+        versionName = "1.7"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -123,9 +123,10 @@ tasks.whenTaskAdded {
     if (name == "assembleRelease") {
         doLast {
             val apkDir = file("build/outputs/apk/release")
+            val versionName = android.defaultConfig.versionName
             apkDir.listFiles()?.forEach { file ->
                 if (file.name.endsWith(".apk")) {
-                    file.renameTo(File(apkDir, "BalletLog-1.6.1.apk"))
+                    file.renameTo(File(apkDir, "BalletLog-$versionName.apk"))
                 }
             }
         }

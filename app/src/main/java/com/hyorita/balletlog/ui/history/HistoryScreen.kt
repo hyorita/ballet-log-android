@@ -26,8 +26,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.compose.foundation.Image
 import androidx.compose.ui.layout.ContentScale
@@ -472,67 +470,63 @@ fun HistoryScreen(
         }
     }
 
-    // Log Detail
+    // Full-screen modals as inline overlays. Hide the root NavBar while any
+    // is active to avoid double-counting its inset and so overlays cover the
+    // entire screen.
+    val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
+    val anyModalActive = showDetail || showEditor || showNoteDetail ||
+        showNoteEditor || selectedPhotoLog != null
+    androidx.compose.runtime.DisposableEffect(anyModalActive) {
+        if (anyModalActive) bottomBarVisible.value = false
+        onDispose { bottomBarVisible.value = true }
+    }
+
     if (showDetail) {
         val log = selectedLog ?: return
-        Dialog(
-            onDismissRequest = { showDetail = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                DetailScreen(
-                    log = logs.find { it.id == log.id } ?: log,
-                    onDismiss = { showDetail = false },
-                    onEdit = { showEditor = true },
-                    onDelete = { vm.deleteLog(log); showDetail = false },
-                    onToggleFavorite = { vm.toggleFavorite(log) }
-                )
-            }
+        androidx.activity.compose.BackHandler { showDetail = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            DetailScreen(
+                log = logs.find { it.id == log.id } ?: log,
+                onDismiss = { showDetail = false },
+                onEdit = { showEditor = true },
+                onDelete = { vm.deleteLog(log); showDetail = false },
+                onToggleFavorite = { vm.toggleFavorite(log) }
+            )
         }
     }
 
-    // Log Editor
     if (showEditor) {
-        Dialog(
-            onDismissRequest = { showEditor = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                val initialDateMillis = selectedDayKey?.let { key ->
-                    runCatching { dayKeyFormat.parse(key)?.time }.getOrNull()
-                }
-                EditorScreen(
-                    existingLog = selectedLog,
-                    onDismiss = { _ -> showEditor = false },
-                    vm = vm,
-                    initialDate = if (selectedLog == null) initialDateMillis else null
-                )
+        androidx.activity.compose.BackHandler { showEditor = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            val initialDateMillis = selectedDayKey?.let { key ->
+                runCatching { dayKeyFormat.parse(key)?.time }.getOrNull()
             }
+            EditorScreen(
+                existingLog = selectedLog,
+                onDismiss = { _ -> showEditor = false },
+                vm = vm,
+                initialDate = if (selectedLog == null) initialDateMillis else null
+            )
         }
     }
 
-    // Note Detail
     if (showNoteDetail) {
         val note = selectedNote ?: return
-        Dialog(
-            onDismissRequest = { showNoteDetail = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                NoteDetailScreen(
-                    note = notes.find { it.id == note.id } ?: note,
-                    classLogs = logs,
-                    onDismiss = { showNoteDetail = false },
-                    onEdit = { showNoteEditor = true },
-                    onDelete = { notesVm.delete(note); showNoteDetail = false },
-                    onTogglePin = { notesVm.togglePin(note) },
-                    onOpenLog = { log ->
-                        showNoteDetail = false
-                        selectedLog = log
-                        showDetail = true
-                    }
-                )
-            }
+        androidx.activity.compose.BackHandler { showNoteDetail = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            NoteDetailScreen(
+                note = notes.find { it.id == note.id } ?: note,
+                classLogs = logs,
+                onDismiss = { showNoteDetail = false },
+                onEdit = { showNoteEditor = true },
+                onDelete = { notesVm.delete(note); showNoteDetail = false },
+                onTogglePin = { notesVm.togglePin(note) },
+                onOpenLog = { log ->
+                    showNoteDetail = false
+                    selectedLog = log
+                    showDetail = true
+                }
+            )
         }
     }
 
@@ -555,56 +549,43 @@ fun HistoryScreen(
         }
     }
 
-    // PhotoLog full-screen preview (matches iOS HistoryPhotoLogPreview)
     selectedPhotoLog?.let { p ->
-        Dialog(
-            onDismissRequest = { selectedPhotoLog = null },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
-            )
+        androidx.activity.compose.BackHandler { selectedPhotoLog = null }
+        Box(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(Color.Black)
         ) {
-            Box(
+            PhotoLogCard(photoLog = p)
+            IconButton(
+                onClick = { selectedPhotoLog = null },
                 modifier = Modifier
-                    .fillMaxSize()
-                    .background(Color.Black)
+                    .align(Alignment.TopStart)
+                    .padding(12.dp)
+                    .size(44.dp)
+                    .clip(CircleShape)
+                    .background(Color.Black.copy(alpha = 0.30f))
             ) {
-                PhotoLogCard(photoLog = p)
-                IconButton(
-                    onClick = { selectedPhotoLog = null },
-                    modifier = Modifier
-                        .align(Alignment.TopStart)
-                        .padding(12.dp)
-                        .size(44.dp)
-                        .clip(CircleShape)
-                        .background(Color.Black.copy(alpha = 0.30f))
-                ) {
-                    Icon(
-                        Icons.Default.Close,
-                        contentDescription = null,
-                        tint = Color.White
-                    )
-                }
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = null,
+                    tint = Color.White
+                )
             }
         }
     }
 
-    // Note Editor
     if (showNoteEditor) {
         val allTags = notes.flatMap { it.tags }.distinct().sorted()
-        Dialog(
-            onDismissRequest = { showNoteEditor = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false, decorFitsSystemWindows = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                NoteEditorScreen(
-                    existingNote = selectedNote,
-                    classLogs = logs,
-                    allTags = allTags,
-                    onDismiss = { showNoteEditor = false },
-                    vm = notesVm
-                )
-            }
+        androidx.activity.compose.BackHandler { showNoteEditor = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            NoteEditorScreen(
+                existingNote = selectedNote,
+                classLogs = logs,
+                allTags = allTags,
+                onDismiss = { showNoteEditor = false },
+                vm = notesVm
+            )
         }
     }
 }

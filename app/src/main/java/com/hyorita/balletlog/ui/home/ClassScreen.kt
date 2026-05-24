@@ -21,8 +21,6 @@ import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.window.Dialog
-import androidx.compose.ui.window.DialogProperties
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.ClassLog
@@ -116,48 +114,49 @@ fun ClassScreen(vm: HomeViewModel = viewModel()) {
         }
     }
 
+    // Detail / Editor as inline full-screen overlays. The root NavBar is
+    // hidden while either is active so the overlay covers the full screen
+    // and IME padding doesn't double-count the NavBar inset.
+    val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
+    androidx.compose.runtime.DisposableEffect(showDetail, showEditor) {
+        if (showDetail || showEditor) bottomBarVisible.value = false
+        onDispose { bottomBarVisible.value = true }
+    }
+
     if (showDetail) {
         val log = selectedLog ?: return
         val liveLog = logs.find { it.id == log.id } ?: log
-        Dialog(
-            onDismissRequest = { showDetail = false },
-            properties = DialogProperties(usePlatformDefaultWidth = false)
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                key(liveLog.workoutJson) {
-                    DetailScreen(
-                        log = liveLog,
-                        onDismiss = { showDetail = false },
-                        onEdit = { showEditor = true },
-                        onDelete = { vm.deleteLog(liveLog); showDetail = false },
-                        onToggleFavorite = { vm.toggleFavorite(liveLog) },
-                        onFetchWorkout = { vm.fetchAndSaveWorkout(liveLog) },
-                        onView = { vm.incrementViewCount(liveLog.id) }
-                    )
-                }
+        androidx.activity.compose.BackHandler { showDetail = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            key(liveLog.workoutJson) {
+                DetailScreen(
+                    log = liveLog,
+                    onDismiss = { showDetail = false },
+                    onEdit = { showEditor = true },
+                    onDelete = { vm.deleteLog(liveLog); showDetail = false },
+                    onToggleFavorite = { vm.toggleFavorite(liveLog) },
+                    onFetchWorkout = { vm.fetchAndSaveWorkout(liveLog) },
+                    onView = { vm.incrementViewCount(liveLog.id) }
+                )
             }
         }
     }
 
     if (showEditor) {
         val liveLog = selectedLog?.let { sel -> logs.find { it.id == sel.id } } ?: selectedLog
-        Dialog(
-            onDismissRequest = { showEditor = false },
-            properties = DialogProperties(
-                usePlatformDefaultWidth = false,
-                decorFitsSystemWindows = false
+        androidx.activity.compose.BackHandler {
+            showEditor = false
+            if (selectedLog == null) showDetail = false
+        }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            EditorScreen(
+                existingLog = liveLog,
+                onDismiss = { saved ->
+                    showEditor = false
+                    if (selectedLog == null && !saved) showDetail = false
+                },
+                vm = vm
             )
-        ) {
-            Surface(modifier = Modifier.fillMaxSize()) {
-                EditorScreen(
-                    existingLog = liveLog,
-                    onDismiss = { saved ->
-                        showEditor = false
-                        if (selectedLog == null && !saved) showDetail = false
-                    },
-                    vm = vm
-                )
-            }
         }
     }
 }

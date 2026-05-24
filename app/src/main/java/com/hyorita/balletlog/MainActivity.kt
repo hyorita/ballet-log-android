@@ -7,7 +7,11 @@ import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.WindowInsetsSides
+import androidx.compose.foundation.layout.only
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
@@ -72,13 +76,31 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+/**
+ * Lets nested screens (Editor, Detail, Settings) hide the root NavigationBar
+ * while a full-screen overlay is presented. Without this, the overlay sits
+ * inside NavHost's padded slot and the NavBar shows through underneath —
+ * also double-counting its inset against IME padding.
+ */
+val LocalBottomBarVisible = compositionLocalOf { mutableStateOf(true) }
+
 @Composable
 fun BalletLogApp() {
     val navController = rememberNavController()
     val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.History)
+    val bottomBarVisible = remember { mutableStateOf(true) }
 
+    androidx.compose.runtime.CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
     Scaffold(
+        // When a full-screen overlay is active, don't reserve the navigation
+        // bar inset — otherwise children's IME padding stacks on top of it
+        // and the chip bar floats one NavBar height above the keyboard.
+        contentWindowInsets = if (bottomBarVisible.value)
+            WindowInsets.systemBars
+        else
+            WindowInsets.systemBars.only(WindowInsetsSides.Top),
         bottomBar = {
+            if (!bottomBarVisible.value) return@Scaffold
             NavigationBar(
                 containerColor = MaterialTheme.colorScheme.surface,
                 tonalElevation = 0.dp
@@ -122,5 +144,6 @@ fun BalletLogApp() {
             composable(Screen.Notes.route) { NotesScreen() }
             composable(Screen.History.route) { HistoryScreen() }
         }
+    }
     }
 }
