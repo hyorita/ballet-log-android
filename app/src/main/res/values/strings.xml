@@ -61,6 +61,14 @@
     <string name="term_language_system">System</string>
     <string name="term_language_english">English</string>
     <string name="term_language_korean">한국어</string>
+
+    <!-- Health Connect (1.8 auto-PhotoLog) -->
+    <string name="settings_health_connect">Health Connect</string>
+    <string name="settings_health_connect_connect">Connect Health Connect</string>
+    <string name="settings_health_connect_connected">Connected</string>
+    <string name="settings_health_connect_open">Open Health Connect</string>
+    <string name="settings_health_connect_unavailable">Health Connect is not available on this device.</string>
+    <string name="settings_health_connect_footer">Ballet Log auto-creates a Photo Log entry from your watch workouts (Barre, Dance, Pilates, Yoga, Strength training) — minutes, calories, and heart rate included.</string>
     <string name="notes_show_more">+%1$d more</string>
     <string name="notes_show_less">Show less</string>
     <string name="notes_delete_tag_title">Delete tag</string>

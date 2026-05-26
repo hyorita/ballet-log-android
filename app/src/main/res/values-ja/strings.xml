@@ -61,6 +61,14 @@
     <string name="term_language_system">システム</string>
     <string name="term_language_english">English</string>
     <string name="term_language_korean">한국어</string>
+
+    <!-- Health Connect (1.8 auto-PhotoLog) -->
+    <string name="settings_health_connect">Health Connect</string>
+    <string name="settings_health_connect_connect">Health Connect を接続</string>
+    <string name="settings_health_connect_connected">接続済み</string>
+    <string name="settings_health_connect_open">Health Connect を開く</string>
+    <string name="settings_health_connect_unavailable">この端末では Health Connect を利用できません。</string>
+    <string name="settings_health_connect_footer">ウォッチのワークアウト（Barre、Dance、Pilates、Yoga、筋力トレーニング）が終わると、時間・カロリー・心拍数を含む Photo Log 項目が自動で追加されます。</string>
     <string name="notes_show_more">他%1$d件</string>
     <string name="notes_show_less">折りたたむ</string>
     <string name="notes_delete_tag_title">タグを削除</string>

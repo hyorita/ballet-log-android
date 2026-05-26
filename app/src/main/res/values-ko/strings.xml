@@ -61,6 +61,14 @@
     <string name="term_language_system">시스템</string>
     <string name="term_language_english">English</string>
     <string name="term_language_korean">한국어</string>
+
+    <!-- Health Connect (1.8 auto-PhotoLog) -->
+    <string name="settings_health_connect">Health Connect</string>
+    <string name="settings_health_connect_connect">Health Connect 연결</string>
+    <string name="settings_health_connect_connected">연결됨</string>
+    <string name="settings_health_connect_open">Health Connect 열기</string>
+    <string name="settings_health_connect_unavailable">이 기기에서 Health Connect를 사용할 수 없습니다.</string>
+    <string name="settings_health_connect_footer">워치 워크아웃(Barre, Dance, Pilates, Yoga, 근력 운동)이 끝나면 시간·칼로리·심박수가 담긴 Photo Log 항목이 자동으로 추가됩니다.</string>
     <string name="notes_show_more">+%1$d개 더보기</string>
     <string name="notes_show_less">접기</string>
     <string name="notes_delete_tag_title">태그 삭제</string>
