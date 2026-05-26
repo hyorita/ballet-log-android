@@ -13,6 +13,9 @@ interface PhotoLogDao {
     @Query("SELECT * FROM photo_logs WHERE id = :id")
     suspend fun getById(id: String): PhotoLog?
 
+    @Query("SELECT * FROM photo_logs WHERE externalWorkoutId = :externalId LIMIT 1")
+    suspend fun findByExternalWorkoutId(externalId: String): PhotoLog?
+
     @Query("SELECT * FROM photo_logs WHERE isFavorite = 1 ORDER BY date DESC")
     fun getFavorites(): Flow<List<PhotoLog>>
 

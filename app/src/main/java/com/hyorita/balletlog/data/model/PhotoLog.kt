@@ -1,12 +1,16 @@
 package com.hyorita.balletlog.data.model
 
 import androidx.room.Entity
+import androidx.room.Index
 import androidx.room.PrimaryKey
 import com.google.gson.Gson
 import com.google.gson.reflect.TypeToken
 import java.util.UUID
 
-@Entity(tableName = "photo_logs")
+@Entity(
+    tableName = "photo_logs",
+    indices = [Index("externalWorkoutId")]
+)
 data class PhotoLog(
     @PrimaryKey val id: String = UUID.randomUUID().toString(),
     val photoPath: String = "",
@@ -23,7 +27,11 @@ data class PhotoLog(
     val maxBPM: Int? = null,
     val tagsJson: String = "[]",
     val isFavorite: Boolean = false,
-    val date: Long = System.currentTimeMillis()
+    val date: Long = System.currentTimeMillis(),
+    // Health Connect ExerciseSessionRecord.metadata.id for auto-imported
+    // workouts. Used to dedupe re-imports of the same session. Null for
+    // hand-created PhotoLog entries.
+    val externalWorkoutId: String? = null
 ) {
     val tags: List<String>
         get() = Gson().fromJson(tagsJson, object : TypeToken<List<String>>() {}.type) ?: emptyList()
@@ -44,7 +52,8 @@ data class PhotoLog(
             maxBPM: Int? = null,
             tags: List<String> = emptyList(),
             isFavorite: Boolean = false,
-            date: Long = System.currentTimeMillis()
+            date: Long = System.currentTimeMillis(),
+            externalWorkoutId: String? = null
         ) = PhotoLog(
             photoPath = photoPath,
             filteredPhotoPath = filteredPhotoPath,
@@ -60,7 +69,8 @@ data class PhotoLog(
             maxBPM = maxBPM,
             tagsJson = Gson().toJson(tags),
             isFavorite = isFavorite,
-            date = date
+            date = date,
+            externalWorkoutId = externalWorkoutId
         )
     }
 }
