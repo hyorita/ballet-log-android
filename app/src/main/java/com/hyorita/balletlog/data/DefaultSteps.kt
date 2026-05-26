@@ -4,27 +4,30 @@ import com.hyorita.balletlog.data.model.Step
 
 object DefaultSteps {
 
+    // 1.8: pluralized to match how class syllabi typically name exercises.
+    // Mirrors iOS DefaultSteps.swift. Existing user logs retain whatever
+    // names they were created with; only new editor defaults change.
     val barre: List<Step> = listOf(
-        Step(name = "Plié"),
-        Step(name = "Slow tendu"),
-        Step(name = "Tendu"),
-        Step(name = "Tendu jeté"),
+        Step(name = "Pliés"),
+        Step(name = "Slow tendus"),
+        Step(name = "Tendus"),
+        Step(name = "Jetés"),
         Step(name = "Ronds de jambe à terre"),
-        Step(name = "Fondu"),
+        Step(name = "Fondus"),
         Step(name = "Ronds de jambe en l'air"),
-        Step(name = "Frappé"),
-        Step(name = "Développé"),
+        Step(name = "Frappés"),
+        Step(name = "Développés"),
         Step(name = "Grand battements")
     )
 
     val center: List<Step> = listOf(
         Step(name = "Adagio"),
-        Step(name = "Tendu"),
-        Step(name = "Fondu"),
+        Step(name = "Tendus"),
+        Step(name = "Fondus"),
         Step(name = "Grand battements"),
         Step(name = "Waltz"),
         Step(name = "Allegro 1 (Sautés)"),
-        Step(name = "Allegro 2 (Assemblé)"),
+        Step(name = "Allegro 2 (Assemblés)"),
         Step(name = "Allegro 3 (Jetés)"),
         Step(name = "Medium allegro"),
         Step(name = "Grand allegro")
