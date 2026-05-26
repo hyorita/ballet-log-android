@@ -24,7 +24,10 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.lifecycleScope
+import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
+import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
 import androidx.navigation.NavDestination.Companion.hierarchy
@@ -54,6 +57,12 @@ class MainActivity : ComponentActivity() {
         PermissionController.createRequestPermissionResultContract()
     ) { /* 결과는 hasPermissions()로 확인 */ }
 
+    // 1.8 auto-PhotoLog throttle. Foreground events fire frequently
+    // (notification pull-down, lock/unlock); we don't want to hit Health
+    // Connect every time. 60s window mirrors iOS's "first foreground per
+    // minute" cadence and is well under the 24h lookback so nothing slips.
+    private var lastAutoImportAt: Long = 0L
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
@@ -72,6 +81,20 @@ class MainActivity : ComponentActivity() {
             BalletLogTheme {
                 BalletLogApp()
             }
+        }
+    }
+
+    override fun onStart() {
+        super.onStart()
+        // 1.8: scan recent Health Connect workouts on foreground and insert
+        // any new placeholders into Photo Log. Silent — the new rows just
+        // appear in the grid via the existing Flow.
+        val now = System.currentTimeMillis()
+        if (now - lastAutoImportAt < 60_000L) return
+        lastAutoImportAt = now
+        lifecycleScope.launch {
+            runCatching { HealthConnectAutoImport.importRecent(this@MainActivity) }
+                .onFailure { android.util.Log.e("HealthConnect", "auto-import failed", it) }
         }
     }
 }
