@@ -14,13 +14,10 @@ versionCode 8 / versionName 1.8
 
 ```
 ✨ 1.8 업데이트
-• Health Connect 자동 기록 — 워치/폰의 발레·필라테스·요가·근력 운동을 끝내면 Photo Log에 칼로리·시간·심박수가 들어간 항목이 자동 생성됩니다. 24시간 안에 앱을 열면 동기화돼요.
-• 설정에서 연결 — 설정에 Health Connect 항목 추가. 한 번 권한을 허용하고 상태 확인, "Health Connect 열기"로 공유 데이터 관리.
-• 탭으로 사진 추가 — 운동만 있는 항목은 그리드에서 크림색 카드, 풀스크린에서 어두운 운동 카드로 표시. 풀스크린 어디든 탭하거나 "+ Add Photo" 버튼으로 사진 첨부.
-• 사진 되돌리기 — 풀스크린 메뉴에 사진 제거 액션 추가. 사진만 떼어내고 운동 정보는 유지됩니다.
-• 히스토리도 동일 — 히스토리의 Photo Log 카드를 탭하면 Log 탭과 같은 풀스크린 뷰가 열리고 공유·편집·즐겨찾기·사진 제거·삭제 모두 사용 가능.
-• 편집기 자동 저장 — 기존 클래스를 편집하다 아래로 쓸어 닫아도 변경사항이 자동 저장됩니다. (신규 클래스는 여전히 ✓ 명시 필요)
-• 기본 스텝 이름 복수형 통일 — Pliés, Tendus, Jetés, Fondus, Frappés, Développés.
+• Health Connect 자동 기록 — 워치/폰의 발레·필라테스·요가·근력 운동이 끝나면 칼로리·시간·심박수가 담긴 Photo Log가 자동 생성돼요. (24시간 내 앱 열면 동기화)
+• 탭으로 사진 추가, 메뉴에서 제거 — 사진만 떼어내도 운동 정보는 그대로 유지됩니다.
+• 편집기 자동 저장 — 기존 클래스를 편집하다 닫아도 변경사항이 저장돼요.
+• 기본 스텝 이름 복수형 — Pliés, Tendus, Jetés, Fondus, Frappés, Développés.
 ```
 
 ---
@@ -71,12 +68,9 @@ Play Console → Production 트랙 → Create new release → AAB 업로드 → 
 
 ```
 ✨ What's new in 1.8
-• Health Connect auto-logging — Finish a Barre, Dance, Pilates, Yoga, or Strength workout and a Photo Log entry appears automatically with your calories, duration, and heart rate. Open the app within 24 hours to sync.
-• Connect from Settings — A new Health Connect row lets you grant permission once, see connection state, and open Health Connect to manage shared data.
-• Tap to add a photo — Workout entries appear as quiet cream cards in the grid and a dark workout card in full-screen. Tap anywhere in the full-screen view (or the "+ Add Photo" pill) to attach a photo.
-• Revert the photo — The full-screen menu now has Remove Photo. Drops the photo but keeps the workout details.
-• History parity — Tapping a Photo Log card from History now opens the same full-screen viewer as the Log tab, with share, edit, favorite, remove-photo, and delete all in one place.
-• Editor auto-save — Class log edits save automatically when you swipe the editor down (existing logs only — new ones still need the ✓).
+• Health Connect auto-logging — Barre, Dance, Pilates, Yoga, and Strength workouts auto-create a Photo Log entry with calories, duration, and heart rate. (Sync by opening the app within 24h.)
+• Tap a workout card to attach a photo, remove it from the menu — your workout details stay either way.
+• Editor auto-save — existing class log edits save when you close the editor.
 • Plural default steps — Pliés, Tendus, Jetés, Fondus, Frappés, Développés.
 ```
 
@@ -84,12 +78,9 @@ Play Console → Production 트랙 → Create new release → AAB 업로드 → 
 
 ```
 ✨ 1.8 アップデート
-• Health Connect 自動連携 — バー、ダンス、ピラティス、ヨガ、筋力トレーニングのワークアウトを終えると、消費カロリー・時間・心拍数が入った Photo Log 項目が自動作成されます。24時間以内にアプリを開けば同期されます。
-• 設定から接続 — 設定に Health Connect の項目を追加。一度許可すれば状態確認ができ、「Health Connect を開く」で共有データを管理できます。
-• タップで写真追加 — ワークアウトのみの項目はグリッドで静かなクリーム色のカード、フルスクリーンで暗いワークアウトカードとして表示。フルスクリーンのどこかをタップ、または「+ Add Photo」で写真を添付できます。
-• 写真の取り消し — フルスクリーンメニューに写真を削除を追加。写真だけ外し、ワークアウト情報は残せます。
-• ヒストリーも同じ動作 — ヒストリーから Photo Log カードをタップすると、Log タブと同じフルスクリーンが開きます。シェア・編集・お気に入り・写真削除・削除が一箇所にまとまりました。
-• エディタの自動保存 — クラスログを編集後に下にスワイプして閉じても変更が自動保存されます(既存ログのみ — 新規ログは引き続き ✓ が必要)。
+• Health Connect 自動連携 — バレエ・ピラティス・ヨガ・筋トレのワークアウトを終えると、消費カロリー・時間・心拍数が入った Photo Log が自動作成。(24時間以内にアプリを開いて同期)
+• タップで写真追加、メニューで取り消し — 写真だけ外してもワークアウト情報は残ります。
+• エディタの自動保存 — 既存クラスログは閉じた時点で自動保存。
 • デフォルトステップ名を複数形に — Pliés, Tendus, Jetés, Fondus, Frappés, Développés。
 ```
 
