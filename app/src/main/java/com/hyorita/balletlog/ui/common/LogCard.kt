@@ -23,8 +23,10 @@ import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
-import androidx.compose.ui.unit.sp
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import coil.compose.AsyncImage
+import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.PhotoManager
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.theme.BalletPink
@@ -90,7 +92,11 @@ fun LogCard(
                     .background(BalletPink.copy(alpha = 0.20f)),
                 contentAlignment = Alignment.Center
             ) {
-                Text("🩰", fontSize = 22.sp)
+                Image(
+                    painter = painterResource(id = R.drawable.ic_ballet_shoe),
+                    contentDescription = null,
+                    modifier = Modifier.size(28.dp)
+                )
             }
         }
 
@@ -126,13 +132,14 @@ fun LogCard(
                     preview,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    maxLines = 2
+                    maxLines = 2,
+                    overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
                 )
             }
             log.workout?.let { wo ->
-                Spacer(Modifier.height(4.dp))
+                Spacer(Modifier.height(2.dp))
                 Row(
-                    horizontalArrangement = Arrangement.spacedBy(12.dp),
+                    horizontalArrangement = Arrangement.spacedBy(10.dp),
                     verticalAlignment = Alignment.CenterVertically
                 ) {
                     MetaChip(
@@ -171,3 +178,4 @@ private fun MetaChip(
         )
     }
 }
+

@@ -47,7 +47,10 @@ import com.hyorita.balletlog.ui.home.HomeViewModel
 import com.hyorita.balletlog.ui.notes.NoteDetailScreen
 import com.hyorita.balletlog.ui.notes.NoteEditorScreen
 import com.hyorita.balletlog.ui.notes.NotesViewModel
+import com.hyorita.balletlog.ui.photolog.EditorTarget
 import com.hyorita.balletlog.ui.photolog.PhotoLogCard
+import com.hyorita.balletlog.ui.photolog.PhotoLogEditScreen
+import com.hyorita.balletlog.ui.photolog.PhotoLogPager
 import com.hyorita.balletlog.ui.photolog.PhotoLogViewModel
 import com.hyorita.balletlog.ui.stats.StatsScreen
 import java.text.SimpleDateFormat
@@ -64,6 +67,7 @@ fun HistoryScreen(
     val notes by notesVm.notes.collectAsState()
     val photoLogs by photoLogVm.photoLogs.collectAsState()
     var selectedPhotoLog by remember { mutableStateOf<PhotoLog?>(null) }
+    var photoEditorTarget by remember { mutableStateOf<EditorTarget?>(null) }
 
     var currentYear by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.YEAR)) }
     var currentMonth by remember { mutableIntStateOf(Calendar.getInstance().get(Calendar.MONTH)) }
@@ -475,7 +479,7 @@ fun HistoryScreen(
     // entire screen.
     val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
     val anyModalActive = showDetail || showEditor || showNoteDetail ||
-        showNoteEditor || selectedPhotoLog != null
+        showNoteEditor || selectedPhotoLog != null || photoEditorTarget != null
     androidx.compose.runtime.DisposableEffect(anyModalActive) {
         if (anyModalActive) bottomBarVisible.value = false
         onDispose { bottomBarVisible.value = true }
@@ -549,29 +553,42 @@ fun HistoryScreen(
         }
     }
 
+    // 1.8: same full-screen viewer as the Log tab — share / edit / favorite /
+    // remove-photo / delete all live here, not just the card.
     selectedPhotoLog?.let { p ->
         androidx.activity.compose.BackHandler { selectedPhotoLog = null }
-        Box(
-            modifier = Modifier
-                .fillMaxSize()
-                .background(Color.Black)
-        ) {
-            PhotoLogCard(photoLog = p)
-            IconButton(
-                onClick = { selectedPhotoLog = null },
-                modifier = Modifier
-                    .align(Alignment.TopStart)
-                    .padding(12.dp)
-                    .size(44.dp)
-                    .clip(CircleShape)
-                    .background(Color.Black.copy(alpha = 0.30f))
-            ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = null,
-                    tint = Color.White
-                )
-            }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            PhotoLogPager(
+                logs = photoLogs,
+                startId = p.id,
+                onDismiss = { selectedPhotoLog = null },
+                onEdit = { log ->
+                    selectedPhotoLog = null
+                    photoEditorTarget = EditorTarget.Edit(log)
+                },
+                onDelete = { log ->
+                    photoLogVm.delete(log)
+                    selectedPhotoLog = null
+                },
+                onToggleFavorite = { photoLogVm.toggleFavorite(it) },
+                onAttachPhoto = { log, uri ->
+                    photoLogVm.savePhotoFromUri(uri) { saved, _ ->
+                        if (saved != null) photoLogVm.attachPhoto(log, saved)
+                    }
+                },
+                onRemovePhoto = { photoLogVm.removePhoto(it) }
+            )
+        }
+    }
+
+    photoEditorTarget?.let { target ->
+        androidx.activity.compose.BackHandler { photoEditorTarget = null }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            PhotoLogEditScreen(
+                target = target,
+                vm = photoLogVm,
+                onDismiss = { photoEditorTarget = null }
+            )
         }
     }
 
@@ -593,6 +610,11 @@ fun HistoryScreen(
 
 @Composable
 fun HistoryPhotoLogBanner(photoLog: PhotoLog, onTap: () -> Unit) {
+    if (photoLog.isWorkoutOnly) {
+        HistoryWorkoutBanner(photoLog = photoLog, onTap = onTap)
+        return
+    }
+
     val context = LocalContext.current
     val displayName = photoLog.filteredPhotoPath ?: photoLog.photoPath
     val photoFile = remember(displayName) { PhotoLogStorage.fileFor(context, displayName) }
@@ -672,6 +694,79 @@ fun HistoryPhotoLogBanner(photoLog: PhotoLog, onTap: () -> Unit) {
                         fontWeight = FontWeight.SemiBold
                     )
                 }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryWorkoutBanner(photoLog: PhotoLog, onTap: () -> Unit) {
+    val dateText = remember(photoLog.date) {
+        SimpleDateFormat("EEE, MMM d", Locale.getDefault()).format(Date(photoLog.date))
+    }
+    val subText = buildString {
+        photoLog.durationMin?.let { append("$it min") }
+        photoLog.avgBPM?.let {
+            if (isNotEmpty()) append(" · ")
+            append("$it bpm")
+        }
+    }
+    Box(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .height(110.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFF4F4F6))
+            .clickable(onClick = onTap)
+            .padding(horizontal = 16.dp, vertical = 12.dp)
+    ) {
+        if (photoLog.isFavorite) {
+            Icon(
+                Icons.Default.Favorite,
+                contentDescription = null,
+                tint = Color(0xFFE91E63),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(14.dp)
+            )
+        }
+        Column(
+            modifier = Modifier.align(Alignment.CenterStart),
+            verticalArrangement = Arrangement.spacedBy(2.dp)
+        ) {
+            Text(
+                dateText,
+                color = Color(0xFF1A1A1A),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (subText.isNotEmpty()) {
+                Text(
+                    subText,
+                    color = Color(0xFF8A8A8A),
+                    fontSize = 11.sp
+                )
+            }
+        }
+        photoLog.kcal?.takeIf { it > 0 }?.let { k ->
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier.align(Alignment.CenterEnd)
+            ) {
+                Text(
+                    "$k",
+                    color = Color(0xFF111111),
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Light,
+                    lineHeight = 44.sp
+                )
+                Text(
+                    "kcal",
+                    color = Color(0xFF999999),
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 8.dp, start = 2.dp)
+                )
             }
         }
     }

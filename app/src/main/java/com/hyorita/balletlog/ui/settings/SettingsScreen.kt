@@ -253,6 +253,43 @@ fun SettingsScreen(
                         hcGranted = HealthConnectManager.hasPermissions(context)
                     }
                 }
+                // Per-app permission page inside Health Connect. Multiple actions
+                // because the page lives in different places depending on platform
+                // version (Android 14+ integrated controller vs. older standalone
+                // HC app). Try each in order — ActivityNotFoundException means
+                // nothing on this device handles that action, so fall through.
+                val openManagement: () -> Unit = openManage@{
+                    val pkg = context.packageName
+                    val candidates = listOf(
+                        Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                            .putExtra(Intent.EXTRA_PACKAGE_NAME, pkg),
+                        Intent("androidx.health.ACTION_MANAGE_HEALTH_PERMISSIONS")
+                            .putExtra(Intent.EXTRA_PACKAGE_NAME, pkg),
+                        Intent("android.health.connect.action.HEALTH_HOME_SETTINGS"),
+                        Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS")
+                    )
+                    for (intent in candidates) {
+                        try {
+                            context.startActivity(intent)
+                            return@openManage
+                        } catch (_: android.content.ActivityNotFoundException) {
+                            // try next
+                        } catch (t: Throwable) {
+                            android.util.Log.w("HealthConnect", "open intent failed", t)
+                        }
+                    }
+                    // Nothing handled the intent — point at the standalone HC app
+                    // on the Play Store as a last resort. Pre-Android-14 devices
+                    // without HC installed land here.
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("market://details?id=com.google.android.apps.healthdata")
+                            )
+                        )
+                    }
+                }
                 SectionHeader(stringResource(R.string.settings_health_connect))
                 Card(
                     modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
@@ -260,53 +297,25 @@ fun SettingsScreen(
                     elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                     colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
                 ) {
-                    Column {
-                        SettingsRow(
-                            icon = Icons.Default.MonitorHeart,
-                            title = if (hcGranted)
-                                stringResource(R.string.settings_health_connect_connected)
-                            else
-                                stringResource(R.string.settings_health_connect_connect),
-                            enabled = hcAvailable && !hcGranted,
-                            onClick = {
-                                permLauncher.launch(HealthConnectManager.permissions)
-                            }
-                        )
-                        if (hcAvailable) {
-                            HorizontalDivider(
-                                modifier = Modifier.padding(start = 56.dp),
-                                color = MaterialTheme.colorScheme.outlineVariant.copy(alpha = 0.4f)
-                            )
-                            SettingsRow(
-                                icon = Icons.AutoMirrored.Filled.OpenInNew,
-                                title = stringResource(R.string.settings_health_connect_open),
-                                enabled = true,
-                                onClick = {
-                                    // Health Connect's settings activity. Falls back
-                                    // to the Play Store entry for the Health Connect
-                                    // companion app when the platform settings
-                                    // intent isn't resolvable.
-                                    val intent = Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS")
-                                    val resolved = intent.resolveActivity(context.packageManager) != null
-                                    if (resolved) {
-                                        context.startActivity(intent)
-                                    } else {
-                                        val store = Intent(
-                                            Intent.ACTION_VIEW,
-                                            Uri.parse("market://details?id=com.google.android.apps.healthdata")
-                                        )
-                                        runCatching { context.startActivity(store) }
-                                    }
-                                }
-                            )
+                    SettingsRow(
+                        icon = Icons.Default.MonitorHeart,
+                        title = if (hcGranted)
+                            stringResource(R.string.settings_health_connect_manage)
+                        else
+                            stringResource(R.string.settings_health_connect_connect),
+                        enabled = hcAvailable,
+                        onClick = {
+                            if (hcGranted) openManagement()
+                            else permLauncher.launch(HealthConnectManager.permissions)
                         }
-                    }
+                    )
                 }
                 Text(
-                    if (hcAvailable)
-                        stringResource(R.string.settings_health_connect_footer)
-                    else
-                        stringResource(R.string.settings_health_connect_unavailable),
+                    when {
+                        !hcAvailable -> stringResource(R.string.settings_health_connect_unavailable)
+                        hcGranted -> stringResource(R.string.settings_health_connect_footer_connected)
+                        else -> stringResource(R.string.settings_health_connect_footer)
+                    },
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)

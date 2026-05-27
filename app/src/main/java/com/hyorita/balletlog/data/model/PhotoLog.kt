@@ -36,6 +36,12 @@ data class PhotoLog(
     val tags: List<String>
         get() = Gson().fromJson(tagsJson, object : TypeToken<List<String>>() {}.type) ?: emptyList()
 
+    /** Auto-imported Health Connect workout that hasn't gotten a photo yet. */
+    val isWorkoutOnly: Boolean get() = photoPath.isBlank()
+
+    val hasWorkoutData: Boolean
+        get() = kcal != null || durationMin != null || avgBPM != null || maxBPM != null
+
     companion object {
         fun create(
             photoPath: String,

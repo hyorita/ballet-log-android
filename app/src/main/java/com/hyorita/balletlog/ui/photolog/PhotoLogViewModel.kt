@@ -81,6 +81,31 @@ class PhotoLogViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * Attach a photo (already saved to PhotoLogStorage) to a workout-only
+     * placeholder. Keeps the kcal / duration / HR fields intact so the
+     * card stops being a placeholder but still shows the workout overlay.
+     */
+    fun attachPhoto(log: PhotoLog, photoFileName: String) {
+        viewModelScope.launch {
+            dao.update(log.copy(photoPath = photoFileName, filteredPhotoPath = null))
+        }
+    }
+
+    /**
+     * 1.8 "Remove Photo" — drop just the photo files and clear the path,
+     * leaving the workout fields so the entry returns to placeholder state.
+     */
+    fun removePhoto(log: PhotoLog) {
+        viewModelScope.launch {
+            dao.update(log.copy(photoPath = "", filteredPhotoPath = null))
+            withContext(Dispatchers.IO) {
+                PhotoLogStorage.delete(getApplication(), log.photoPath)
+                PhotoLogStorage.delete(getApplication(), log.filteredPhotoPath)
+            }
+        }
+    }
+
     fun deleteTag(tag: PhotoLogTag) {
         viewModelScope.launch { dao.deleteTag(tag) }
     }

@@ -15,6 +15,25 @@
     <uses-permission android:name="android.permission.health.READ_TOTAL_CALORIES_BURNED" />
     <uses-permission android:name="android.permission.health.READ_HEART_RATE" />
 
+    <!-- Android 11+ package visibility: needed for resolveActivity() to see
+         Health Connect's settings activities and the Play Store fallback. -->
+    <queries>
+        <intent>
+            <action android:name="android.health.connect.action.MANAGE_HEALTH_PERMISSIONS" />
+        </intent>
+        <intent>
+            <action android:name="android.health.connect.action.HEALTH_HOME_SETTINGS" />
+        </intent>
+        <intent>
+            <action android:name="androidx.health.ACTION_MANAGE_HEALTH_PERMISSIONS" />
+        </intent>
+        <intent>
+            <action android:name="androidx.health.ACTION_HEALTH_CONNECT_SETTINGS" />
+        </intent>
+        <package android:name="com.google.android.apps.healthdata" />
+        <package android:name="com.google.android.healthconnect.controller" />
+    </queries>
+
     <application
         android:allowBackup="true"
         android:dataExtractionRules="@xml/data_extraction_rules"

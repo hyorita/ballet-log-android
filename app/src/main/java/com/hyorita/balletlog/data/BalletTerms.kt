@@ -205,7 +205,9 @@ object BalletTerms {
         "fondu" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
         "tendu" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
         "plié" to listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th"),
-        "plie" to listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th")
+        "plie" to listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th"),
+        "jeté" to listOf("jeté", "petit", "grand", "tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
+        "jete" to listOf("jeté", "petit", "grand", "tendu", "devant", "à la seconde", "derrière", "1st", "5th")
     )
 
     fun featuredEnglish(forStepName: String): List<String>? {

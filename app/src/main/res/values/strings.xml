@@ -65,10 +65,17 @@
     <!-- Health Connect (1.8 auto-PhotoLog) -->
     <string name="settings_health_connect">Health Connect</string>
     <string name="settings_health_connect_connect">Connect Health Connect</string>
-    <string name="settings_health_connect_connected">Connected</string>
-    <string name="settings_health_connect_open">Open Health Connect</string>
+    <string name="settings_health_connect_manage">Manage in Health Connect</string>
     <string name="settings_health_connect_unavailable">Health Connect is not available on this device.</string>
     <string name="settings_health_connect_footer">Ballet Log auto-creates a Photo Log entry from your watch workouts (Barre, Dance, Pilates, Yoga, Strength training) — minutes, calories, and heart rate included.</string>
+    <string name="settings_health_connect_footer_connected">Connected. Tap to manage which data Ballet Log can read in Health Connect.</string>
+
+    <!-- Workout placeholder (1.8 auto-PhotoLog) -->
+    <string name="photolog_add_photo">Add Photo</string>
+    <string name="photolog_remove_photo">Remove Photo</string>
+    <string name="photolog_remove_photo_title">Remove this photo?</string>
+    <string name="photolog_remove_photo_message">The photo will be deleted but the workout details stay on the card.</string>
+    <string name="photolog_workout">Workout</string>
     <string name="notes_show_more">+%1$d more</string>
     <string name="notes_show_less">Show less</string>
     <string name="notes_delete_tag_title">Delete tag</string>
