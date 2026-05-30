@@ -25,36 +25,34 @@ versionCode 9 / versionName 1.8.1
 
 ---
 
-## Release Notes (1.8 발표 그대로 — 일반 사용자에겐 1.8.1이 첫 노출)
+## Release Notes — 1.8.1 패치
+
+1.8을 먼저 프로덕션 게시한 뒤 곧바로 1.8.1을 올리는 흐름이라
+1.8.1 노트는 패치 fix만 짧게 다룸. 1.8 기능 변경 사용자 설명은
+1.8 게시 때 이미 전달됨 (`PLAY-CONSOLE-1.8.md` 참조).
 
 ### 한국어
 
 ```
-✨ 1.8 업데이트
-• Health Connect 자동 기록 — 워치/폰의 발레·필라테스·요가·근력 운동이 끝나면 칼로리·시간·심박수가 담긴 Photo Log가 자동 생성돼요. (24시간 내 앱 열면 동기화)
-• 탭으로 사진 추가, 메뉴에서 제거 — 사진만 떼어내도 운동 정보는 그대로 유지됩니다.
-• 편집기 자동 저장 — 기존 클래스를 편집하다 닫아도 변경사항이 저장돼요.
-• 기본 스텝 이름 복수형 — Pliés, Tendus, Jetés, Fondus, Frappés, Développés.
+🛠 1.8.1
+• 콤비네이션 메모 칩 바 — 한국어/일본어로 입력된 step 이름에서도 그 step에 맞는 발레 용어 칩이 먼저 정렬돼요.
+• Jetés / Fondus / Frappés 칩이 각자 본인 용어부터 시작하도록 정리.
 ```
 
 ### English
 
 ```
-✨ What's new in 1.8
-• Health Connect auto-logging — Barre, Dance, Pilates, Yoga, and Strength workouts auto-create a Photo Log entry with calories, duration, and heart rate. (Sync by opening the app within 24h.)
-• Tap a workout card to attach a photo, remove it from the menu — your workout details stay either way.
-• Editor auto-save — existing class log edits save when you close the editor.
-• Plural default steps — Pliés, Tendus, Jetés, Fondus, Frappés, Développés.
+🛠 1.8.1
+• Combination notes chip bar — Korean and Japanese step names now reorder the chips to terms relevant to that step, matching the English behavior.
+• Jetés, Fondus, and Frappés chip sets now lead with their own step term.
 ```
 
 ### 日本語
 
 ```
-✨ 1.8 アップデート
-• Health Connect 自動連携 — バレエ・ピラティス・ヨガ・筋トレのワークアウトを終えると、消費カロリー・時間・心拍数が入った Photo Log が自動作成。(24時間以内にアプリを開いて同期)
-• タップで写真追加、メニューで取り消し — 写真だけ外してもワークアウト情報は残ります。
-• エディタの自動保存 — 既存クラスログは閉じた時点で自動保存。
-• デフォルトステップ名を複数形に — Pliés, Tendus, Jetés, Fondus, Frappés, Développés。
+🛠 1.8.1
+• コンビネーションノートのチップバー — 韓国語・日本語のステップ名でも、そのステップに合うバレエ用語チップが先頭に並びます。
+• Jetés / Fondus / Frappés のチップがそれぞれの用語から始まるように整理。
 ```
 
 ---
