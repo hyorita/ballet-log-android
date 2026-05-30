@@ -181,33 +181,73 @@ object BalletTerms {
     fun defaultOrder(term: BalletTerm): Int =
         defaultOrderIndex[term.english] ?: Int.MAX_VALUE
 
+    // Chip sets — one constant per step family so the keyword table below
+    // can map several language variants of the same step to the same list.
+    private val pliéChips = listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th")
+    private val tenduChips = listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th")
+    private val jetéChips = listOf("jeté", "devant", "à la seconde", "derrière", "1st", "5th")
+    private val fonduChips = listOf("fondu", "devant", "à la seconde", "derrière", "1st", "5th")
+    private val frappéChips = listOf("frappé", "devant", "à la seconde", "derrière", "1st", "5th", "battu", "up", "petit battement")
+    private val développéChips = listOf("passé", "développé", "enveloppé", "relevé lent", "rond", "devant", "à la seconde", "derrière", "écarté")
+    private val àTerreChips = listOf("rond", "grand", "plié", "devant", "derrière", "battement", "passé", "développé", "écarté")
+    private val enLAirChips = listOf("passé", "développé", "en dehors", "en dedans", "relevé", "up", "5th")
+    private val grandBattementChips = listOf("grand", "battement", "devant", "à la seconde", "derrière", "1st", "5th", "en croix", "en avant", "en arrière", "de côté")
+    private val adagioChips = listOf("croisé", "écarté", "effacé", "devant", "derrière", "passé", "à la seconde", "promenade", "allongé")
+    private val waltzChips = listOf("balancé", "tombé", "pas de bourrée", "preparation", "4th", "pirouette", "en dehors", "en dedans", "renversé")
+    private val allegro1Chips = listOf("sauté", "changement", "1st", "2nd", "4th", "5th", "entrechat", "soubresaut")
+    private val allegro2Chips = listOf("glissade", "assemblé", "sauté", "soubresaut", "tombé", "brisé", "pas de bourrée")
+    private val allegro3Chips = listOf("glissade", "jeté", "temps levé", "2nd", "pas de bourrée", "brisé")
+    private val mediumAllegroChips = listOf("fermé", "failli", "assemblé", "tombé", "pas de bourrée", "grand", "ouvert", "pas de chat")
+    private val grandAllegroChips = listOf("tombé", "pas de bourrée", "glissade", "grand", "pas de chat", "jeté", "piqué", "arabesque", "chassé", "entrelacé", "en tournant")
+
     /**
      * Step-name keyword → priority list of english keys. First entry whose
      * keyword the step-name contains (case-insensitive substring) wins.
-     * Used to bubble context-relevant chips to the front of the bar.
+     * Each step has en + ja + ko keyword variants so localized step names
+     * (e.g. "탄듀", "タンデュ") match the same chip set as the English form.
      * Most specific keywords come first.
      */
     private val featuredByKeyword: List<Pair<String, List<String>>> = listOf(
-        "adagio" to listOf("croisé", "écarté", "effacé", "devant", "derrière", "passé", "temps lié", "à la seconde", "promenade", "allongé"),
-        "allegro 1" to listOf("sauté", "changement", "1st", "2nd", "4th", "5th", "entrechat", "soubresaut"),
-        "allegro 2" to listOf("glissade", "assemblé", "sauté", "soubresaut", "tombé", "brisé", "pas de bourrée"),
-        "allegro 3" to listOf("glissade", "jeté", "temps levé", "2nd", "pas de bourrée", "brisé"),
-        "medium allegro" to listOf("fermé", "failli", "assemblé", "tombé", "pas de bourrée", "grand", "ouvert", "pas de chat"),
-        "grand allegro" to listOf("tombé", "pas de bourrée", "glissade", "grand", "pas de chat", "jeté", "piqué", "arabesque", "chassé", "entrelacé", "en tournant"),
-        "waltz" to listOf("balancé", "tombé", "pas de bourrée", "preparation", "4th", "pirouette", "en dehors", "en dedans", "renversé"),
-        "à terre" to listOf("rond", "passé par terre", "grand", "plié", "devant", "derrière", "battement", "passé", "développé", "écarté"),
-        "en l'air" to listOf("passé", "développé", "en dehors", "en dedans", "relevé", "up", "5th"),
-        "grand battement" to listOf("devant", "à la seconde", "derrière", "1st", "5th", "en croix", "en avant", "en arrière", "de côté"),
-        "développé" to listOf("passé", "développé", "enveloppé", "relevé lent", "rond", "devant", "à la seconde", "derrière", "écarté"),
-        "developpe" to listOf("passé", "développé", "enveloppé", "relevé lent", "rond", "devant", "à la seconde", "derrière", "écarté"),
-        "frappé" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th", "battu", "up", "petit battement"),
-        "frappe" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th", "battu", "up", "petit battement"),
-        "fondu" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
-        "tendu" to listOf("tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
-        "plié" to listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th"),
-        "plie" to listOf("demi", "grand", "plié", "1st", "2nd", "4th", "5th"),
-        "jeté" to listOf("jeté", "petit", "grand", "tendu", "devant", "à la seconde", "derrière", "1st", "5th"),
-        "jete" to listOf("jeté", "petit", "grand", "tendu", "devant", "à la seconde", "derrière", "1st", "5th")
+        // Adagio
+        "adagio" to adagioChips, "アダージョ" to adagioChips, "아다지오" to adagioChips,
+
+        // Allegro 1/2/3 — must come before generic "allegro" mentions and
+        // before "jeté" ("알레그로 3 (제떼)" contains "제떼" too).
+        "allegro 1" to allegro1Chips, "アレグロ1" to allegro1Chips, "알레그로 1" to allegro1Chips,
+        "allegro 2" to allegro2Chips, "アレグロ2" to allegro2Chips, "알레그로 2" to allegro2Chips,
+        "allegro 3" to allegro3Chips, "アレグロ3" to allegro3Chips, "알레그로 3" to allegro3Chips,
+
+        // Medium / Grand allegro
+        "medium allegro" to mediumAllegroChips, "ミディアム・アレグロ" to mediumAllegroChips, "미디엄 알레그로" to mediumAllegroChips,
+        "grand allegro" to grandAllegroChips, "グラン・アレグロ" to grandAllegroChips, "그랑 알레그로" to grandAllegroChips,
+
+        // Waltz
+        "waltz" to waltzChips, "ワルツ" to waltzChips, "왈츠" to waltzChips,
+
+        // Ronds de jambe à terre / en l'air
+        "à terre" to àTerreChips, "ア・テール" to àTerreChips, "아 떼르" to àTerreChips,
+        "en l'air" to enLAirChips, "アン・レール" to enLAirChips, "앙레르" to enLAirChips,
+
+        // Grand battements — must come before plain "battement" or "grand"
+        "grand battement" to grandBattementChips, "グラン・バットマン" to grandBattementChips, "그랑 바뜨망" to grandBattementChips,
+
+        // Développés
+        "développé" to développéChips, "developpe" to développéChips, "デヴェロッペ" to développéChips, "데벨로뻬" to développéChips,
+
+        // Frappés
+        "frappé" to frappéChips, "frappe" to frappéChips, "フラッペ" to frappéChips, "프라뻬" to frappéChips,
+
+        // Fondus
+        "fondu" to fonduChips, "フォンデュ" to fonduChips, "퐁듀" to fonduChips,
+
+        // Jetés — must come after "allegro 3" (whose ko form contains "제떼")
+        "jeté" to jetéChips, "ジュテ" to jetéChips, "제떼" to jetéChips,
+
+        // Tendus (also matches "Slow tendus" / "슬로우 탄듀" / "スロー・タンデュ")
+        "tendu" to tenduChips, "タンデュ" to tenduChips, "탄듀" to tenduChips,
+
+        // Pliés
+        "plié" to pliéChips, "plie" to pliéChips, "プリエ" to pliéChips, "플리에" to pliéChips
     )
 
     fun featuredEnglish(forStepName: String): List<String>? {
