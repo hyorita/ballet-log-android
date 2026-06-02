@@ -22,6 +22,8 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.compose.foundation.Image
+import androidx.compose.ui.res.painterResource
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.LogCard
@@ -212,7 +214,11 @@ private fun EmptyClassState(modifier: Modifier = Modifier) {
         horizontalAlignment = Alignment.CenterHorizontally,
         verticalArrangement = Arrangement.spacedBy(8.dp)
     ) {
-        Text("🩰", style = MaterialTheme.typography.displayMedium)
+        Image(
+            painter = painterResource(id = R.drawable.ic_ballet_shoe),
+            contentDescription = null,
+            modifier = Modifier.size(72.dp)
+        )
         Text(
             stringResource(R.string.no_classes_logged_yet),
             style = MaterialTheme.typography.titleMedium,

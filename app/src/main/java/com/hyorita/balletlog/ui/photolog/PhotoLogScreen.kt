@@ -134,7 +134,13 @@ fun PhotoLogScreen(
                     vm.delete(log)
                     viewerStartId = null
                 },
-                onToggleFavorite = { vm.toggleFavorite(it) }
+                onToggleFavorite = { vm.toggleFavorite(it) },
+                onAttachPhoto = { log, uri ->
+                    vm.savePhotoFromUri(uri) { saved, _ ->
+                        if (saved != null) vm.attachPhoto(log, saved)
+                    }
+                },
+                onRemovePhoto = { vm.removePhoto(it) }
             )
         }
     }
@@ -303,6 +309,11 @@ private fun GridThumb(
     onTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
+    if (log.isWorkoutOnly) {
+        WorkoutGridThumb(log = log, onTap = onTap, modifier = modifier)
+        return
+    }
+
     val context = LocalContext.current
     val displayName = log.filteredPhotoPath ?: log.photoPath
     val photoFile = remember(displayName) { PhotoLogStorage.fileFor(context, displayName) }
@@ -376,6 +387,83 @@ private fun GridThumb(
                     fontWeight = FontWeight.SemiBold
                 )
             }
+        }
+    }
+}
+
+/**
+ * 1.8: workout-only grid card. Mirrors iOS layout — light/off-white surface,
+ * date top-left, large kcal right-of-center, sub-stats bottom-left.
+ */
+@Composable
+private fun WorkoutGridThumb(
+    log: PhotoLog,
+    onTap: () -> Unit,
+    modifier: Modifier = Modifier
+) {
+    val shortDate = remember(log.date) {
+        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(log.date))
+    }
+    val subText = buildString {
+        log.durationMin?.let { append("$it min") }
+        log.avgBPM?.let {
+            if (isNotEmpty()) append(" · ")
+            append("$it bpm")
+        }
+    }
+    Box(
+        modifier = modifier
+            .background(Color(0xFFF4F4F6))
+            .clickable(onClick = onTap)
+            .padding(horizontal = 14.dp, vertical = 12.dp)
+    ) {
+        if (log.isFavorite) {
+            Icon(
+                Icons.Default.Favorite,
+                contentDescription = null,
+                tint = Color(0xFFE91E63),
+                modifier = Modifier
+                    .align(Alignment.TopEnd)
+                    .size(14.dp)
+            )
+        }
+        Text(
+            shortDate,
+            color = Color(0xFF1A1A1A),
+            fontSize = 14.sp,
+            fontWeight = FontWeight.SemiBold,
+            modifier = Modifier.align(Alignment.TopStart)
+        )
+        val kcal = log.kcal
+        if (kcal != null && kcal > 0) {
+            Row(
+                verticalAlignment = Alignment.Bottom,
+                modifier = Modifier
+                    .align(Alignment.CenterEnd)
+                    .padding(end = 4.dp)
+            ) {
+                Text(
+                    "$kcal",
+                    color = Color(0xFF111111),
+                    fontSize = 56.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    lineHeight = 56.sp
+                )
+                Text(
+                    "kcal",
+                    color = Color(0xFF999999),
+                    fontSize = 13.sp,
+                    modifier = Modifier.padding(bottom = 10.dp, start = 2.dp)
+                )
+            }
+        }
+        if (subText.isNotEmpty()) {
+            Text(
+                subText,
+                color = Color(0xFF8A8A8A),
+                fontSize = 11.sp,
+                modifier = Modifier.align(Alignment.BottomStart)
+            )
         }
     }
 }
@@ -475,7 +563,14 @@ private fun buildCollageRows(logs: List<PhotoLog>, indexOffset: Int): List<Colla
         val remaining = logs.size - i
         when {
             bucket == 0 || bucket == 1 || remaining == 1 -> {
-                val fullHeight = if (heightBucket <= 1) base * 1.6f else base
+                // Workout-only cards have no photo content to fill the space,
+                // so a tall Full row reads as a giant empty rectangle. Use a
+                // compact height regardless of the heightBucket pattern.
+                val fullHeight = when {
+                    logs[i].isWorkoutOnly -> base * 0.9f
+                    heightBucket <= 1 -> base * 1.6f
+                    else -> base
+                }
                 rows.add(CollageRow.Full(logs[i], fullHeight))
                 i += 1
             }

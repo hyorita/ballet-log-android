@@ -5,6 +5,7 @@ import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
@@ -54,6 +55,14 @@ fun TermChipBar(
 
     if (terms.isEmpty()) return
 
+    // Reset horizontal scroll when the focused step changes so the user
+    // doesn't see the old step's scroll position bleed into the new step's
+    // (different) chip ordering.
+    val listState = rememberLazyListState()
+    LaunchedEffect(stepName) {
+        if (stepName.isNotEmpty()) listState.scrollToItem(0)
+    }
+
     Surface(
         modifier = modifier.fillMaxWidth(),
         color = MaterialTheme.colorScheme.surfaceContainerHigh,
@@ -61,6 +70,7 @@ fun TermChipBar(
         shadowElevation = 4.dp
     ) {
         LazyRow(
+            state = listState,
             contentPadding = PaddingValues(horizontal = 12.dp, vertical = 8.dp),
             horizontalArrangement = Arrangement.spacedBy(6.dp),
             modifier = Modifier.height(48.dp)

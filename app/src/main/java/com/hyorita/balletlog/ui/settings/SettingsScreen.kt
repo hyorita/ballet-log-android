@@ -13,9 +13,11 @@ import androidx.compose.foundation.text.KeyboardOptions
 import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
+import androidx.compose.material.icons.automirrored.filled.OpenInNew
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Upload
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -31,9 +33,11 @@ import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.BackupManager
+import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.ProfilePreferences
 import com.hyorita.balletlog.data.TermLanguage
 import com.hyorita.balletlog.data.TermLanguagePreferences
+import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -233,6 +237,89 @@ fun SettingsScreen(
                         )
                     }
                 }
+            }
+
+            // Health Connect (1.8 auto-PhotoLog)
+            item {
+                val hcAvailable = remember { HealthConnectManager.isAvailable(context) }
+                var hcGranted by remember { mutableStateOf(false) }
+                LaunchedEffect(Unit) {
+                    hcGranted = HealthConnectManager.hasPermissions(context)
+                }
+                val permLauncher = rememberLauncherForActivityResult(
+                    PermissionController.createRequestPermissionResultContract()
+                ) {
+                    scope.launch {
+                        hcGranted = HealthConnectManager.hasPermissions(context)
+                    }
+                }
+                // Per-app permission page inside Health Connect. Multiple actions
+                // because the page lives in different places depending on platform
+                // version (Android 14+ integrated controller vs. older standalone
+                // HC app). Try each in order — ActivityNotFoundException means
+                // nothing on this device handles that action, so fall through.
+                val openManagement: () -> Unit = openManage@{
+                    val pkg = context.packageName
+                    val candidates = listOf(
+                        Intent("android.health.connect.action.MANAGE_HEALTH_PERMISSIONS")
+                            .putExtra(Intent.EXTRA_PACKAGE_NAME, pkg),
+                        Intent("androidx.health.ACTION_MANAGE_HEALTH_PERMISSIONS")
+                            .putExtra(Intent.EXTRA_PACKAGE_NAME, pkg),
+                        Intent("android.health.connect.action.HEALTH_HOME_SETTINGS"),
+                        Intent("androidx.health.ACTION_HEALTH_CONNECT_SETTINGS")
+                    )
+                    for (intent in candidates) {
+                        try {
+                            context.startActivity(intent)
+                            return@openManage
+                        } catch (_: android.content.ActivityNotFoundException) {
+                            // try next
+                        } catch (t: Throwable) {
+                            android.util.Log.w("HealthConnect", "open intent failed", t)
+                        }
+                    }
+                    // Nothing handled the intent — point at the standalone HC app
+                    // on the Play Store as a last resort. Pre-Android-14 devices
+                    // without HC installed land here.
+                    runCatching {
+                        context.startActivity(
+                            Intent(
+                                Intent.ACTION_VIEW,
+                                Uri.parse("market://details?id=com.google.android.apps.healthdata")
+                            )
+                        )
+                    }
+                }
+                SectionHeader(stringResource(R.string.settings_health_connect))
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    SettingsRow(
+                        icon = Icons.Default.MonitorHeart,
+                        title = if (hcGranted)
+                            stringResource(R.string.settings_health_connect_manage)
+                        else
+                            stringResource(R.string.settings_health_connect_connect),
+                        enabled = hcAvailable,
+                        onClick = {
+                            if (hcGranted) openManagement()
+                            else permLauncher.launch(HealthConnectManager.permissions)
+                        }
+                    )
+                }
+                Text(
+                    when {
+                        !hcAvailable -> stringResource(R.string.settings_health_connect_unavailable)
+                        hcGranted -> stringResource(R.string.settings_health_connect_footer_connected)
+                        else -> stringResource(R.string.settings_health_connect_footer)
+                    },
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
             }
 
             // Combination terms language

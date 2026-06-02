@@ -98,39 +98,68 @@ fun EditorScreen(
         barreSteps.map { it.name + it.note } != existingLog.barreSteps.map { it.name + it.note } ||
         centerSteps.map { it.name + it.note } != existingLog.centerSteps.map { it.name + it.note }
 
-    // Auto-save mirrors iOS persistInPlace: existing logs (or new logs that
-    // already got an id via Find-Ballet-Workout) are updated on dismiss.
-    // Pure-new drafts are NOT auto-saved — matches iOS to avoid ghost logs.
+    // 1.8: auto-save covers both existing logs (always update) and new
+    // logs with meaningful content typed (insert). Brand-new drafts with
+    // no real content are still skipped so the user doesn't end up with
+    // ghost rows just from opening the editor.
+    val hasMeaningfulContent = notes.isNotBlank() ||
+        photos.isNotEmpty() ||
+        barreSteps.any { it.note.isNotBlank() } ||
+        centerSteps.any { it.note.isNotBlank() } ||
+        barreMusic.isNotBlank() ||
+        centerMusic.isNotBlank()
+
     var didSaveExplicitly by remember { mutableStateOf(false) }
+    var didDiscardExplicitly by remember { mutableStateOf(false) }
     val persistInPlace = persist@{
-        val targetId = savedLogId ?: existingLog?.id ?: return@persist
         val gson = com.google.gson.Gson()
-        val updated = ClassLog.create(
-            date = date,
-            barreSteps = barreSteps.toList(),
-            centerSteps = centerSteps.toList(),
-            photos = photos.toList(),
-            barreMusic = barreMusic,
-            centerMusic = centerMusic,
-            notes = notes,
-            favorite = favorite
-        ).copy(
-            id = targetId,
-            workoutJson = fetchedWorkout?.let { gson.toJson(it) }
-                ?: existingLog?.workoutJson
-        )
-        vm.updateLog(updated)
+        val targetId = savedLogId ?: existingLog?.id
+        if (targetId != null) {
+            val updated = ClassLog.create(
+                date = date,
+                barreSteps = barreSteps.toList(),
+                centerSteps = centerSteps.toList(),
+                photos = photos.toList(),
+                barreMusic = barreMusic,
+                centerMusic = centerMusic,
+                notes = notes,
+                favorite = favorite
+            ).copy(
+                id = targetId,
+                workoutJson = fetchedWorkout?.let { gson.toJson(it) }
+                    ?: existingLog?.workoutJson
+            )
+            vm.updateLog(updated)
+        } else if (hasMeaningfulContent) {
+            val inserted = ClassLog.create(
+                date = date,
+                barreSteps = barreSteps.toList(),
+                centerSteps = centerSteps.toList(),
+                photos = photos.toList(),
+                barreMusic = barreMusic,
+                centerMusic = centerMusic,
+                notes = notes,
+                favorite = favorite
+            ).copy(
+                workoutJson = fetchedWorkout?.let { gson.toJson(it) }
+            )
+            vm.insertLog(inserted)
+            // Prevent a double-insert if onDispose somehow fires twice in
+            // the same composition lifetime.
+            savedLogId = inserted.id
+        }
     }
 
     DisposableEffect(Unit) {
         onDispose {
-            if (!didSaveExplicitly) persistInPlace()
+            if (!didSaveExplicitly && !didDiscardExplicitly) persistInPlace()
         }
     }
 
     // Discard confirmation only when the user is creating a brand-new log
-    // and hasn't saved it yet. Edits to existing logs auto-save on dispose.
-    val needsDiscardConfirm = existingLog == null && savedLogId == null && hasChanges
+    // and actually typed something. Edits to existing logs auto-save on
+    // dispose; empty new drafts vanish silently.
+    val needsDiscardConfirm = existingLog == null && savedLogId == null && hasMeaningfulContent
     BackHandler(enabled = needsDiscardConfirm || fetchedWorkout != null) {
         when {
             fetchedWorkout != null -> onDismiss(true)
@@ -677,6 +706,7 @@ fun EditorScreen(
             dismissButton = {
                 TextButton(onClick = {
                     showDiscardAlert = false
+                    didDiscardExplicitly = true
                     onDismiss(false)
                 }) { Text(stringResource(R.string.discard)) }
             }

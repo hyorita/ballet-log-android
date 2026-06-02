@@ -1,5 +1,9 @@
 package com.hyorita.balletlog.ui.photolog
 
+import android.net.Uri
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.PickVisualMediaRequest
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.animation.AnimatedVisibility
 import androidx.compose.animation.fadeIn
 import androidx.compose.animation.fadeOut
@@ -10,11 +14,13 @@ import androidx.compose.foundation.pager.HorizontalPager
 import androidx.compose.foundation.pager.rememberPagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.AddAPhoto
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
+import androidx.compose.material.icons.filled.HideImage
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
@@ -27,8 +33,10 @@ import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.IntOffset
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.PhotoLog
 import com.hyorita.balletlog.ui.common.sharePhotoLog
@@ -42,7 +50,9 @@ fun PhotoLogPager(
     onDismiss: () -> Unit,
     onEdit: (PhotoLog) -> Unit,
     onDelete: (PhotoLog) -> Unit,
-    onToggleFavorite: (PhotoLog) -> Unit
+    onToggleFavorite: (PhotoLog) -> Unit,
+    onAttachPhoto: (PhotoLog, Uri) -> Unit = { _, _ -> },
+    onRemovePhoto: (PhotoLog) -> Unit = {}
 ) {
     val startIndex = remember(startId, logs) {
         logs.indexOfFirst { it.id == startId }.coerceAtLeast(0)
@@ -52,11 +62,27 @@ fun PhotoLogPager(
 
     var showMore by remember { mutableStateOf(false) }
     var showDeleteConfirm by remember { mutableStateOf(false) }
+    var showRemovePhotoConfirm by remember { mutableStateOf(false) }
     var isSharing by remember { mutableStateOf(false) }
     var dragY by remember { mutableStateOf(0f) }
     val density = LocalDensity.current
 
     val context = LocalContext.current
+
+    // 1.8: photo picker for "+ Add Photo" / tap-to-add on workout-only cards.
+    // PickMultipleVisualMedia keeps parity with the Edit screen's picker so
+    // the same OS sheet appears across both surfaces.
+    val photoPicker = rememberLauncherForActivityResult(
+        ActivityResultContracts.PickMultipleVisualMedia()
+    ) { uris ->
+        val uri = uris.firstOrNull() ?: return@rememberLauncherForActivityResult
+        current?.let { onAttachPhoto(it, uri) }
+    }
+    val launchPhotoPicker: () -> Unit = {
+        photoPicker.launch(
+            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+        )
+    }
 
     Box(
         modifier = Modifier
@@ -80,7 +106,18 @@ fun PhotoLogPager(
     ) {
         HorizontalPager(state = pagerState) { page ->
             logs.getOrNull(page)?.let { log ->
-                PhotoLogCard(photoLog = log)
+                PhotoLogCard(
+                    photoLog = log,
+                    onWorkoutCardTap = if (log.isWorkoutOnly) launchPhotoPicker else null,
+                    addPhotoSlot = if (log.isWorkoutOnly) {
+                        {
+                            AddPhotoPill(
+                                label = stringResource(R.string.photolog_add_photo),
+                                onClick = launchPhotoPicker
+                            )
+                        }
+                    } else null
+                )
             }
         }
 
@@ -140,6 +177,16 @@ fun PhotoLogPager(
                         contentDescription = stringResource(R.string.photolog_edit),
                         onClick = { current?.let(onEdit) }
                     )
+                    // 1.8: drop just the photo, keep workout data so the
+                    // card returns to placeholder state. Only meaningful
+                    // when the current log actually has a photo.
+                    if (current?.isWorkoutOnly == false && current.hasWorkoutData) {
+                        ActionButton(
+                            icon = Icons.Default.HideImage,
+                            contentDescription = stringResource(R.string.photolog_remove_photo),
+                            onClick = { showRemovePhotoConfirm = true }
+                        )
+                    }
                     ActionButton(
                         icon = Icons.Default.Delete,
                         contentDescription = stringResource(R.string.delete),
@@ -175,6 +222,48 @@ fun PhotoLogPager(
                     Text(stringResource(R.string.cancel))
                 }
             }
+        )
+    }
+
+    if (showRemovePhotoConfirm && current != null) {
+        AlertDialog(
+            onDismissRequest = { showRemovePhotoConfirm = false },
+            title = { Text(stringResource(R.string.photolog_remove_photo_title)) },
+            text = { Text(stringResource(R.string.photolog_remove_photo_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    showRemovePhotoConfirm = false
+                    showMore = false
+                    onRemovePhoto(current)
+                }) { Text(stringResource(R.string.photolog_remove_photo)) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showRemovePhotoConfirm = false }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
+    }
+}
+
+@Composable
+private fun AddPhotoPill(label: String, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = CircleShape,
+        color = Color.Transparent,
+        contentColor = Color.White,
+        border = androidx.compose.foundation.BorderStroke(
+            1.dp,
+            Color.White.copy(alpha = 0.55f)
+        )
+    ) {
+        Text(
+            text = "+  $label",
+            color = Color.White,
+            fontSize = 13.sp,
+            fontWeight = FontWeight.Medium,
+            modifier = Modifier.padding(horizontal = 14.dp, vertical = 7.dp)
         )
     }
 }

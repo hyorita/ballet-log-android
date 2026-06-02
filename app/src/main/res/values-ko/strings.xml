@@ -61,6 +61,21 @@
     <string name="term_language_system">시스템</string>
     <string name="term_language_english">English</string>
     <string name="term_language_korean">한국어</string>
+
+    <!-- Health Connect (1.8 auto-PhotoLog) -->
+    <string name="settings_health_connect">Health Connect</string>
+    <string name="settings_health_connect_connect">Health Connect 연결</string>
+    <string name="settings_health_connect_manage">Health Connect에서 권한 관리</string>
+    <string name="settings_health_connect_unavailable">이 기기에서 Health Connect를 사용할 수 없습니다.</string>
+    <string name="settings_health_connect_footer">워치 워크아웃(Barre, Dance, Pilates, Yoga, 근력 운동)이 끝나면 시간·칼로리·심박수가 담긴 Photo Log 항목이 자동으로 추가됩니다.</string>
+    <string name="settings_health_connect_footer_connected">연결됨. 탭하면 Ballet Log가 읽을 수 있는 데이터를 Health Connect에서 관리할 수 있어요.</string>
+
+    <!-- Workout placeholder (1.8 auto-PhotoLog) -->
+    <string name="photolog_add_photo">사진 추가</string>
+    <string name="photolog_remove_photo">사진 제거</string>
+    <string name="photolog_remove_photo_title">이 사진을 제거할까요?</string>
+    <string name="photolog_remove_photo_message">사진은 삭제되지만 워크아웃 정보는 카드에 남아 있어요.</string>
+    <string name="photolog_workout">워크아웃</string>
     <string name="notes_show_more">+%1$d개 더보기</string>
     <string name="notes_show_less">접기</string>
     <string name="notes_delete_tag_title">태그 삭제</string>

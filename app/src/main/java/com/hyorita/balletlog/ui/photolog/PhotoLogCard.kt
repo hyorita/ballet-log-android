@@ -1,7 +1,11 @@
 package com.hyorita.balletlog.ui.photolog
 
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.navigationBars
+import androidx.compose.foundation.layout.windowInsetsPadding
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -34,8 +38,20 @@ import java.util.Locale
 @Composable
 fun PhotoLogCard(
     photoLog: PhotoLog,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    addPhotoSlot: (@Composable () -> Unit)? = null,
+    onWorkoutCardTap: (() -> Unit)? = null
 ) {
+    if (photoLog.isWorkoutOnly) {
+        WorkoutPlaceholderCard(
+            photoLog = photoLog,
+            modifier = modifier,
+            addPhotoSlot = addPhotoSlot,
+            onTap = onWorkoutCardTap
+        )
+        return
+    }
+
     val context = LocalContext.current
     val displayName = photoLog.filteredPhotoPath ?: photoLog.photoPath
     val photoFile = remember(displayName) { PhotoLogStorage.fileFor(context, displayName) }
@@ -122,14 +138,14 @@ fun PhotoLogCard(
                         text = "$k",
                         color = Color.White,
                         fontSize = 56.sp,
-                        fontWeight = FontWeight.Bold
+                        fontWeight = FontWeight.Light,
+                        lineHeight = 56.sp
                     )
                     Spacer(Modifier.width(3.dp))
                     Text(
                         text = "kcal",
                         color = Color.White.copy(alpha = 0.85f),
                         fontSize = 16.sp,
-                        fontWeight = FontWeight.Medium,
                         modifier = Modifier.padding(bottom = 8.dp)
                     )
                 }
@@ -183,6 +199,75 @@ fun PhotoLogCard(
                         }
                     }
                 }
+            }
+        }
+    }
+}
+
+/**
+ * 1.8: full-screen layout for workout-only entries (no photo yet).
+ * Mirrors iOS — dark charcoal background, all meta and the "+ Add Photo"
+ * pill stacked in the bottom-right corner (so the layout reads as a
+ * "photo-shaped void waiting for a photo", not as a centered stat card).
+ */
+@Composable
+private fun WorkoutPlaceholderCard(
+    photoLog: PhotoLog,
+    modifier: Modifier = Modifier,
+    addPhotoSlot: (@Composable () -> Unit)? = null,
+    onTap: (() -> Unit)? = null
+) {
+    Box(
+        modifier = modifier
+            .fillMaxSize()
+            .background(Color(0xFF1A1A1A))
+            .then(if (onTap != null) Modifier.clickable(onClick = onTap) else Modifier)
+    ) {
+        Column(
+            horizontalAlignment = Alignment.End,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .windowInsetsPadding(WindowInsets.navigationBars)
+                .padding(end = 20.dp, bottom = 20.dp)
+        ) {
+            Text(
+                text = headerDate(photoLog.date),
+                color = Color.White.copy(alpha = 0.85f),
+                fontSize = 14.sp,
+                fontWeight = FontWeight.Medium
+            )
+            Spacer(Modifier.height(4.dp))
+            val kcal = photoLog.kcal
+            if (kcal != null && kcal > 0) {
+                Row(verticalAlignment = Alignment.Bottom) {
+                    Text(
+                        text = "$kcal",
+                        color = Color.White,
+                        fontSize = 72.sp,
+                        fontWeight = FontWeight.Light,
+                        lineHeight = 72.sp
+                    )
+                    Spacer(Modifier.width(4.dp))
+                    Text(
+                        text = "kcal",
+                        color = Color.White.copy(alpha = 0.7f),
+                        fontSize = 16.sp,
+                        modifier = Modifier.padding(bottom = 14.dp)
+                    )
+                }
+            }
+            val subs = subStats(photoLog)
+            if (subs.isNotEmpty()) {
+                Spacer(Modifier.height(2.dp))
+                Text(
+                    text = subs.joinToString(" · "),
+                    color = Color.White.copy(alpha = 0.6f),
+                    fontSize = 13.sp
+                )
+            }
+            if (addPhotoSlot != null) {
+                Spacer(Modifier.height(16.dp))
+                addPhotoSlot()
             }
         }
     }

@@ -19,6 +19,18 @@ val MIGRATION_3_4 = object : Migration(3, 4) {
     }
 }
 
+val MIGRATION_5_6 = object : Migration(5, 6) {
+    override fun migrate(database: SupportSQLiteDatabase) {
+        // 1.8: Health Connect auto-import dedupe key.
+        database.execSQL(
+            "ALTER TABLE photo_logs ADD COLUMN externalWorkoutId TEXT"
+        )
+        database.execSQL(
+            "CREATE INDEX IF NOT EXISTS index_photo_logs_externalWorkoutId ON photo_logs(externalWorkoutId)"
+        )
+    }
+}
+
 val MIGRATION_4_5 = object : Migration(4, 5) {
     override fun migrate(database: SupportSQLiteDatabase) {
         database.execSQL(
@@ -62,7 +74,7 @@ val MIGRATION_4_5 = object : Migration(4, 5) {
 
 @Database(
     entities = [ClassLog::class, Note::class, PhotoLog::class, PhotoLogTag::class],
-    version = 5,
+    version = 6,
     exportSchema = false
 )
 abstract class BalletLogDatabase : RoomDatabase() {
@@ -80,7 +92,7 @@ abstract class BalletLogDatabase : RoomDatabase() {
                     BalletLogDatabase::class.java,
                     "ballet_log_db"
                 )
-                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5)
+                    .addMigrations(MIGRATION_3_4, MIGRATION_4_5, MIGRATION_5_6)
                     .build()
                     .also { INSTANCE = it }
             }
