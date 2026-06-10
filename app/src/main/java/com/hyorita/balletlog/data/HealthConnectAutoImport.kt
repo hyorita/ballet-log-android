@@ -34,10 +34,24 @@ object HealthConnectAutoImport {
         lookbackHours: Long = 24
     ): Int {
         val records = HealthConnectManager.scanRecentWorkouts(context, lookbackHours)
+        return importWorkouts(dao, records)
+    }
+
+    /**
+     * Shared dedupe + insert path for every 1.9 import entry point (foreground
+     * auto-import, History per-day tap, connect-time 30-day backfill). Skips any
+     * session whose identity is already on a PhotoLog. Returns the number of
+     * placeholders newly inserted.
+     */
+    suspend fun importWorkouts(
+        dao: PhotoLogDao,
+        records: List<HealthConnectManager.ScannedWorkout>
+    ): Int {
         if (records.isEmpty()) return 0
+        val alreadyImported = dao.getAllExternalWorkoutIds().toHashSet()
         var inserted = 0
         for (rec in records) {
-            if (dao.findByExternalWorkoutId(rec.externalId) != null) continue
+            if (rec.externalId in alreadyImported) continue
             val placeholder = PhotoLog.create(
                 photoPath = "",
                 date = rec.startTimeMillis,
@@ -48,6 +62,7 @@ object HealthConnectAutoImport {
                 externalWorkoutId = rec.externalId
             )
             dao.insert(placeholder)
+            alreadyImported += rec.externalId
             inserted++
         }
         return inserted
