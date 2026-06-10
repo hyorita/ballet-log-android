@@ -366,40 +366,9 @@ fun HistoryScreen(
                 }
             }
 
-            // 1.9: per-day unlogged Health Connect workouts → tap a row to add
-            if (selectedDayKey != null && unloggedDay.isNotEmpty()) {
-                item {
-                    Row(
-                        modifier = Modifier.fillMaxWidth()
-                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                        verticalAlignment = Alignment.CenterVertically
-                    ) {
-                        Icon(
-                            Icons.Default.LocalFireDepartment,
-                            contentDescription = null,
-                            tint = Color(0xFFE91E63),
-                            modifier = Modifier.size(18.dp)
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            stringResource(R.string.history_unlogged_section),
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
-                    }
-                }
-                items(unloggedDay, key = { "unlogged-${it.externalId}" }) { w ->
-                    HistoryUnloggedWorkoutRow(
-                        workout = w,
-                        onAdd = { photoLogVm.importWorkouts(listOf(w)) }
-                    )
-                    Spacer(Modifier.height(8.dp))
-                }
-            }
-
-            // 날짜 선택 && 기록 없음 → iOS 스타일 빈 상태
-            if (selectedDayKey != null && displayLogs.isEmpty() && displayNotes.isEmpty() &&
-                displayPhotoLogs.isEmpty() && unloggedDay.isEmpty()) {
+            // iOS parity: "No classes on this day" + Record Class — shown when a
+            // day is selected and it has no class log (independent of photos/notes).
+            if (selectedDayKey != null && displayLogs.isEmpty()) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
@@ -420,13 +389,17 @@ fun HistoryScreen(
                                 contentColor = Color.White
                             )
                         ) {
-                            Text("+ Record Class", fontWeight = FontWeight.SemiBold, fontSize = 17.sp)
+                            Text(
+                                "+ ${stringResource(R.string.record_class)}",
+                                fontWeight = FontWeight.SemiBold,
+                                fontSize = 17.sp
+                            )
                         }
                     }
                 }
-            } else {
+            }
 
-            // Photo Logs 섹션 — first (iOS 1.6.1 reorder)
+            // Photo Logs 섹션 — only when present (iOS shows no empty header)
             if (displayPhotoLogs.isNotEmpty()) {
                 item {
                     Row(
@@ -465,40 +438,61 @@ fun HistoryScreen(
                 }
             }
 
-            // Classes 섹션
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Image(
-                            painter = painterResource(id = R.drawable.ic_ballet_shoe),
+            // 1.9: per-day unlogged Health Connect workouts → tap a row to add
+            if (selectedDayKey != null && unloggedDay.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.LocalFireDepartment,
                             contentDescription = null,
+                            tint = Color(0xFFE91E63),
                             modifier = Modifier.size(18.dp)
                         )
                         Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.classes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        Text(
+                            stringResource(R.string.history_unlogged_section),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
                     }
-                    Text(
-                        "${displayLogs.size} class${if (displayLogs.size != 1) "es" else ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                }
+                items(unloggedDay, key = { "unlogged-${it.externalId}" }) { w ->
+                    HistoryUnloggedWorkoutRow(
+                        workout = w,
+                        onAdd = { photoLogVm.importWorkouts(listOf(w)) }
                     )
+                    Spacer(Modifier.height(8.dp))
                 }
             }
 
-            if (displayLogs.isEmpty()) {
+            // Classes 섹션 — only when present (iOS shows no empty header)
+            if (displayLogs.isNotEmpty()) {
                 item {
-                    Text(
-                        text = stringResource(R.string.no_classes_logged_yet),
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Image(
+                                painter = painterResource(id = R.drawable.ic_ballet_shoe),
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp)
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.classes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                        Text(
+                            "${displayLogs.size} class${if (displayLogs.size != 1) "es" else ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-            } else {
                 items(displayLogs, key = { it.id }) { log ->
                     LogCard(
                         log = log,
@@ -509,36 +503,26 @@ fun HistoryScreen(
                 }
             }
 
-            // Notes 섹션
-            item {
-                Row(
-                    modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Text("📝", fontSize = 18.sp)
-                        Spacer(Modifier.width(6.dp))
-                        Text(stringResource(R.string.nav_notes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
-                    }
-                    Text(
-                        "${displayNotes.size} note${if (displayNotes.size != 1) "s" else ""}",
-                        style = MaterialTheme.typography.bodySmall,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
-                }
-            }
-
-            if (displayNotes.isEmpty()) {
+            // Notes 섹션 — only when present (iOS shows no empty header)
+            if (displayNotes.isNotEmpty()) {
                 item {
-                    Text(
-                        text = "No notes recorded",
-                        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                        style = MaterialTheme.typography.bodyMedium,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                    Row(
+                        modifier = Modifier.fillMaxWidth().padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        horizontalArrangement = Arrangement.SpaceBetween,
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text("📝", fontSize = 18.sp)
+                            Spacer(Modifier.width(6.dp))
+                            Text(stringResource(R.string.nav_notes), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold)
+                        }
+                        Text(
+                            "${displayNotes.size} note${if (displayNotes.size != 1) "s" else ""}",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
-            } else {
                 items(displayNotes, key = { "note-${it.id}" }) { note ->
                     NoteCard(
                         note = note,
@@ -549,7 +533,6 @@ fun HistoryScreen(
                     Spacer(Modifier.height(8.dp))
                 }
             }
-            } // end else (has records)
         }
     }
 
