@@ -626,7 +626,8 @@ fun HistoryScreen(
                     showStats = false
                     selectedLog = log
                     showDetail = true
-                }
+                },
+                referenceYearMonth = currentYear to currentMonth
             )
         }
     }

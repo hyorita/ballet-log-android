@@ -45,13 +45,19 @@ import java.util.Locale
 fun StatsScreen(
     vm: StatsViewModel = viewModel(),
     onDismiss: () -> Unit = {},
-    onNavigateToLog: (ClassLog) -> Unit = {}
+    onNavigateToLog: (ClassLog) -> Unit = {},
+    referenceYearMonth: Pair<Int, Int>? = null
 ) {
     val period by vm.selectedPeriod.collectAsState()
     val periodLabel by vm.periodLabel.collectAsState()
     val canGoForward by vm.canGoForward.collectAsState()
     val aggregates by vm.aggregates.collectAsState()
     val context = LocalContext.current
+
+    // 1.9: anchor to the month being viewed in History (iOS referenceDate).
+    LaunchedEffect(referenceYearMonth) {
+        referenceYearMonth?.let { (y, m) -> vm.showMonth(y, m) }
+    }
 
     Column(
         modifier = Modifier
@@ -106,7 +112,8 @@ fun StatsScreen(
                     totalClasses = aggregates.totalClasses,
                     totalMinutes = aggregates.totalMinutes.toDouble(),
                     totalCalories = aggregates.totalCalories.toDouble(),
-                    hardestClass = aggregates.hardestClass,
+                    hardestCalories = aggregates.hardestCalories,
+                    hardestDate = aggregates.hardestDate,
                     cubeData = chartData,
                     isCubeChart = period != StatsPeriod.YEAR,
                     chartTitle = chartTitle,
@@ -219,10 +226,10 @@ private fun PeriodSelector(
 
 @Composable
 private fun MetricsGrid(aggregates: StatsAggregates) {
-    val hardestSub = aggregates.hardestClass?.let {
-        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(it.date))
+    val hardestSub = aggregates.hardestDate?.let {
+        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(it))
     }
-    val hardestValue = aggregates.hardestClass?.workout?.activeCalories?.let { "$it kcal" } ?: "—"
+    val hardestValue = aggregates.hardestCalories?.let { "$it kcal" } ?: "—"
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(12.dp)) {
@@ -253,7 +260,7 @@ private fun MetricsGrid(aggregates: StatsAggregates) {
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.EmojiEvents,
                 iconTint = Color(0xFFFFB300),
-                label = "Hardest Class",
+                label = "Hardest Workout",
                 value = hardestValue,
                 sub = hardestSub
             )

@@ -653,7 +653,8 @@ fun shareStatsCard(
     totalClasses: Int,
     totalMinutes: Double,
     totalCalories: Double,
-    hardestClass: ClassLog?,
+    hardestCalories: Int?,
+    hardestDate: Long?,
     cubeData: List<Pair<String, Int>>,
     isCubeChart: Boolean,
     chartTitle: String = "",
@@ -729,9 +730,9 @@ fun shareStatsCard(
 
     val durStr = if (totalMinutes >= 60) String.format("%.1fh", totalMinutes / 60)
     else String.format("%.0fm", totalMinutes)
-    val hardestVal = hardestClass?.workout?.activeCalories?.let { "$it" } ?: "—"
-    val hardestSub = hardestClass?.let {
-        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(it.date))
+    val hardestVal = hardestCalories?.let { "$it" } ?: "—"
+    val hardestSub = hardestDate?.let {
+        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(it))
     }
 
     data class Metric(val icon: String, val value: String, val label: String, val sub: String? = null)
@@ -739,7 +740,7 @@ fun shareStatsCard(
         Metric("📚", "$totalClasses", "Classes"),
         Metric("⏱", durStr, "Workout Time"),
         Metric("🔥", String.format("%,.0f", totalCalories), "kcal"),
-        Metric("🏆", hardestVal, "Hardest Class", hardestSub)
+        Metric("🏆", hardestVal, "Hardest Workout", hardestSub)
     )
 
     val mIconPaint = Paint().apply { textSize = 16 * d; isAntiAlias = true }
