@@ -47,10 +47,10 @@
     <string name="settings_export_failed">내보내기 실패: %1$s</string>
     <string name="settings_import_success">복원이 완료되었어요. 데이터를 적용하려면 앱을 다시 실행해주세요.</string>
     <string name="settings_import_failed">가져오기 실패: %1$s</string>
-    <string name="settings_invalid_archive">선택한 파일은 발레 로그 백업 파일이 아닙니다.</string>
-    <string name="settings_share_app">발레 로그 추천하기</string>
-    <string name="settings_share_message">발레 로그를 사용해보세요 — 발레 클래스를 위한 심플한 다이어리예요.</string>
-    <string name="settings_share_footer">발레 로그가 마음에 드신다면 함께 발레하는 친구에게 추천해주세요.</string>
+    <string name="settings_invalid_archive">선택한 파일은 발레로그 백업 파일이 아닙니다.</string>
+    <string name="settings_share_app">발레로그 추천하기</string>
+    <string name="settings_share_message">발레로그를 사용해보세요 — 발레 클래스를 위한 심플한 다이어리예요.</string>
+    <string name="settings_share_footer">발레로그가 마음에 드신다면 함께 발레하는 친구에게 추천해주세요.</string>
 
     <!-- PhotoLog tutorial -->
     <string name="photolog_tutorial_tap_here">여기를 눌러 첫 로그를 시작해보세요!</string>
