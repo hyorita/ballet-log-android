@@ -201,6 +201,21 @@ fun HistoryScreen(
             modifier = Modifier.fillMaxSize().padding(padding),
             contentPadding = PaddingValues(bottom = 16.dp)
         ) {
+            // 1.9: month-level "unlogged activities" banner — above the calendar
+            // to match iOS HistoryView (banner precedes calendarSection).
+            if (selectedDayKey == null && !bannerHidden &&
+                monthKey !in dismissedMonths && unloggedMonth.isNotEmpty()
+            ) {
+                item {
+                    HistoryUnloggedBanner(
+                        count = unloggedMonth.size,
+                        onAddAll = { photoLogVm.importWorkouts(unloggedMonth) },
+                        onDismiss = { dismissedMonths = dismissedMonths + monthKey },
+                        onHide = { HistoryPreferences.hideUnloggedBanner(context); bannerHidden = true }
+                    )
+                }
+            }
+
             // 캘린더 카드
             item {
                 Card(
@@ -348,20 +363,6 @@ fun HistoryScreen(
                             Spacer(Modifier.height(2.dp))
                         }
                     }
-                }
-            }
-
-            // 1.9: month-level "unlogged activities" banner (month view only)
-            if (selectedDayKey == null && !bannerHidden &&
-                monthKey !in dismissedMonths && unloggedMonth.isNotEmpty()
-            ) {
-                item {
-                    HistoryUnloggedBanner(
-                        count = unloggedMonth.size,
-                        onAddAll = { photoLogVm.importWorkouts(unloggedMonth) },
-                        onDismiss = { dismissedMonths = dismissedMonths + monthKey },
-                        onHide = { HistoryPreferences.hideUnloggedBanner(context); bannerHidden = true }
-                    )
                 }
             }
 
