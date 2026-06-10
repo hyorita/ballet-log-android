@@ -746,7 +746,7 @@ private fun HistoryUnloggedWorkoutRow(
             .fillMaxWidth()
             .padding(horizontal = 16.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFF4F4F6))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onAdd)
             .padding(horizontal = 16.dp, vertical = 12.dp),
         verticalAlignment = Alignment.CenterVertically
@@ -761,12 +761,12 @@ private fun HistoryUnloggedWorkoutRow(
         Column(modifier = Modifier.weight(1f)) {
             Text(
                 timeText,
-                color = Color(0xFF1A1A1A),
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
             if (subText.isNotEmpty()) {
-                Text(subText, color = Color(0xFF8A8A8A), fontSize = 11.sp)
+                Text(subText, color = MaterialTheme.colorScheme.onSurfaceVariant, fontSize = 11.sp)
             }
         }
         Row(verticalAlignment = Alignment.CenterVertically) {
@@ -896,7 +896,7 @@ private fun HistoryWorkoutBanner(photoLog: PhotoLog, onTap: () -> Unit) {
             .padding(horizontal = 16.dp)
             .height(110.dp)
             .clip(RoundedCornerShape(14.dp))
-            .background(Color(0xFFF4F4F6))
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onTap)
             .padding(horizontal = 16.dp, vertical = 12.dp)
     ) {
@@ -916,14 +916,14 @@ private fun HistoryWorkoutBanner(photoLog: PhotoLog, onTap: () -> Unit) {
         ) {
             Text(
                 dateText,
-                color = Color(0xFF1A1A1A),
+                color = MaterialTheme.colorScheme.onSurface,
                 style = MaterialTheme.typography.titleSmall,
                 fontWeight = FontWeight.SemiBold
             )
             if (subText.isNotEmpty()) {
                 Text(
                     subText,
-                    color = Color(0xFF8A8A8A),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 11.sp
                 )
             }
@@ -935,14 +935,14 @@ private fun HistoryWorkoutBanner(photoLog: PhotoLog, onTap: () -> Unit) {
             ) {
                 Text(
                     "$k",
-                    color = Color(0xFF111111),
+                    color = MaterialTheme.colorScheme.onSurface,
                     fontSize = 44.sp,
                     fontWeight = FontWeight.Light,
                     lineHeight = 44.sp
                 )
                 Text(
                     "kcal",
-                    color = Color(0xFF999999),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 12.sp,
                     modifier = Modifier.padding(bottom = 8.dp, start = 2.dp)
                 )
