@@ -10,36 +10,35 @@ iOS 1.9 동기화. Apple Health / Apple Watch → Android Health Connect 대응.
 
 ---
 
-## 원스토어 1.9 Release Notes
+## 1.9 Release Notes (Play Store / 원스토어 공용)
+
+짧은 버전. 스토어 "이번 버전의 새로운 기능" 필드에 그대로 붙여넣기.
 
 ### 한국어
 
 ```
-✨ 1.9 업데이트
-• 지난 워크아웃 불러오기 — Health Connect를 연결하면(이미 연결한 분은 업데이트 후 첫 실행 시) 지난 30일 중 아직 로그에 없는 워크아웃을 한 번에 추가할지 물어봐요.
-• 히스토리에서 하나씩 — History 탭에서 날짜를 고르면 그날의 아직 기록 안 된 워크아웃이 바로 추가할 수 있게 나타나요. 탭하면 기록으로 들어옵니다.
-• 통계 정리 — 불러온 워크아웃도 통계에 반영되고, 같은 운동은 한 번만 집계돼요.
-• 내부 개선 — 더 조용하고 빠른 기록, 그리고 자잘한 정리.
+✨ 1.9
+• 지난 워크아웃 불러오기 — Health Connect 연결 시, 최근 30일 중 기록 안 된 운동을 한 번에 추가.
+• 히스토리에서 추가 — 날짜를 골라 미기록 운동을 탭하면 바로 기록.
+• 통계 정리 — 불러온 운동도 반영되고, 같은 운동은 한 번만 집계.
 ```
 
 ### English
 
 ```
-✨ 1.9 update
-• Bring in past workouts — Connect Health Connect (or, if you already have, on your first launch after updating) and Ballet Log offers to add the workouts from your last 30 days that aren't in your log yet, all at once.
-• Pull one in from History — Open the History tab, pick a day, and any workout from that day that isn't logged yet shows up ready to add. Tap it and it becomes an entry.
-• Tidier stats — Imported workouts now count toward your stats, and the same workout is only counted once.
-• Under the hood — Quieter, faster logging and general housekeeping.
+✨ 1.9
+• Bring in past workouts — connect Health Connect to add the last 30 days of un-logged workouts in one tap.
+• Add from History — pick a day and tap any un-logged workout to log it.
+• Tidier stats — imported workouts count too, each only once.
 ```
 
 ### 日本語
 
 ```
-✨ 1.9 アップデート
-• 過去のワークアウトを取り込む — Health Connect を接続すると（すでに接続済みの方はアップデート後の初回起動時に）、過去30日間でまだログにないワークアウトをまとめて追加するか確認します。
-• ヒストリーから個別に — History タブで日付を選ぶと、その日のまだ記録されていないワークアウトが追加できる状態で表示されます。タップすると項目になります。
-• 統計の整理 — 取り込んだワークアウトも統計に反映され、同じ運動は一度だけカウントされます。
-• その他の改善 — より静かで速い記録と、細かな整理。
+✨ 1.9
+• 過去のワークアウトを取り込む — Health Connect 接続で、直近30日の未記録の運動をまとめて追加。
+• ヒストリーから追加 — 日付を選んで未記録の運動をタップで記録。
+• 統計の整理 — 取り込んだ運動も反映、同じ運動は一度だけ集計。
 ```
 
 ---
