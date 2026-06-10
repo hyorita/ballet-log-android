@@ -30,7 +30,7 @@
     <string name="photolog_recent_tags">最近の入力</string>
     <string name="photolog_tag_delete_title">タグを削除しますか？</string>
     <string name="photolog_share">共有</string>
-    <string name="history_photo_logs">フォトログ</string>
+    <string name="history_photo_logs">ログ</string>
 
     <!-- Settings -->
     <string name="settings_profile">プロフィール</string>

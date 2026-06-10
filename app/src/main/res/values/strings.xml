@@ -30,7 +30,7 @@
     <string name="photolog_recent_tags">Recent</string>
     <string name="photolog_tag_delete_title">Delete tag?</string>
     <string name="photolog_share">Share</string>
-    <string name="history_photo_logs">Photo Logs</string>
+    <string name="history_photo_logs">Logs</string>
 
     <!-- Settings -->
     <string name="settings_profile">Profile</string>

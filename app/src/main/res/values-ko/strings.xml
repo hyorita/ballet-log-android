@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">발레 로그</string>
+    <string name="app_name">발레로그</string>
 
     <!-- Navigation -->
     <string name="nav_log">로그</string>
@@ -30,7 +30,7 @@
     <string name="photolog_recent_tags">최근 입력</string>
     <string name="photolog_tag_delete_title">태그를 삭제할까요?</string>
     <string name="photolog_share">공유</string>
-    <string name="history_photo_logs">포토 로그</string>
+    <string name="history_photo_logs">로그</string>
 
     <!-- Settings -->
     <string name="settings_profile">프로필</string>
