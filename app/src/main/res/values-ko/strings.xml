@@ -182,4 +182,12 @@
     <string name="backfill_message">지난 30일 중 아직 로그에 없는 워크아웃 %1$d개를 찾았어요. 전부 추가할까요?</string>
     <string name="backfill_confirm">모두 추가</string>
     <string name="backfill_dismiss">나중에</string>
+
+    <!-- History unlogged-workout import (1.9) -->
+    <string name="history_unlogged_banner">이번 달 아직 로그에 없는 워크아웃 %1$d개</string>
+    <string name="history_unlogged_add_all">로그에 모두 추가</string>
+    <string name="history_unlogged_dismiss">닫기</string>
+    <string name="history_unlogged_hide">다시 보지 않기</string>
+    <string name="history_unlogged_section">아직 기록 안 됨</string>
+    <string name="history_unlogged_add">추가</string>
 </resources>

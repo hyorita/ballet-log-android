@@ -182,4 +182,12 @@
     <string name="backfill_message">過去30日間でまだログにないワークアウトが%1$d件見つかりました。すべて追加しますか？</string>
     <string name="backfill_confirm">すべて追加</string>
     <string name="backfill_dismiss">あとで</string>
+
+    <!-- History unlogged-workout import (1.9) -->
+    <string name="history_unlogged_banner">今月まだログにないワークアウトが%1$d件</string>
+    <string name="history_unlogged_add_all">すべてログに追加</string>
+    <string name="history_unlogged_dismiss">閉じる</string>
+    <string name="history_unlogged_hide">今後表示しない</string>
+    <string name="history_unlogged_section">まだ未記録</string>
+    <string name="history_unlogged_add">追加</string>
 </resources>

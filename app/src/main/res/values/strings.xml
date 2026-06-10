@@ -182,4 +182,12 @@
     <string name="backfill_message">Ballet Log found %1$d workout(s) from your last 30 days that aren\'t in your log yet. Add them all?</string>
     <string name="backfill_confirm">Add all</string>
     <string name="backfill_dismiss">Not now</string>
+
+    <!-- History unlogged-workout import (1.9) -->
+    <string name="history_unlogged_banner">%1$d workout(s) this month aren\'t in your log yet</string>
+    <string name="history_unlogged_add_all">Add all to log</string>
+    <string name="history_unlogged_dismiss">Dismiss</string>
+    <string name="history_unlogged_hide">Don\'t show again</string>
+    <string name="history_unlogged_section">Not in your log yet</string>
+    <string name="history_unlogged_add">Add</string>
 </resources>

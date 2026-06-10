@@ -8,6 +8,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
@@ -34,6 +35,8 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.res.stringResource
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
+import com.hyorita.balletlog.data.HealthConnectManager
+import com.hyorita.balletlog.data.HistoryPreferences
 import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.PhotoManager
 import com.hyorita.balletlog.data.model.ClassLog
@@ -144,6 +147,35 @@ fun HistoryScreen(
     val displayPhotoLogs = if (selectedDayKey != null)
         photoLogs.filter { dayKeyFormat.format(Date(it.date)) == selectedDayKey }.sortedByDescending { it.date }
     else monthPhotoLogs
+
+    // 1.9: Health Connect workouts for the viewed month that aren't logged yet.
+    // Scan when the month changes; the banner / per-day rows let the user add
+    // them. Already-logged identities come from PhotoLog placeholders and from
+    // ClassLog workouts (1.9 WorkoutInfo.externalWorkoutId).
+    val context = LocalContext.current
+    var monthWorkouts by remember { mutableStateOf<List<HealthConnectManager.ScannedWorkout>>(emptyList()) }
+    var dismissedMonths by remember { mutableStateOf(setOf<String>()) }
+    var bannerHidden by remember { mutableStateOf(HistoryPreferences.isUnloggedBannerHidden(context)) }
+    val monthKey = "%04d-%02d".format(currentYear, currentMonth + 1)
+
+    LaunchedEffect(currentYear, currentMonth) {
+        val cal = Calendar.getInstance().also { it.clear(); it.set(currentYear, currentMonth, 1) }
+        val start = cal.timeInMillis
+        cal.add(Calendar.MONTH, 1)
+        val end = cal.timeInMillis
+        photoLogVm.scanWorkouts(start, end) { monthWorkouts = it }
+    }
+
+    val loggedIds = remember(photoLogs, logs) {
+        (photoLogs.mapNotNull { it.externalWorkoutId } +
+            logs.mapNotNull { it.workout?.externalWorkoutId }).toHashSet()
+    }
+    val unloggedMonth = remember(monthWorkouts, loggedIds) {
+        monthWorkouts.filter { it.externalId !in loggedIds }
+    }
+    val unloggedDay = if (selectedDayKey != null)
+        unloggedMonth.filter { dayKeyFormat.format(Date(it.startTimeMillis)) == selectedDayKey }
+    else emptyList()
 
     Scaffold(
         topBar = {
@@ -319,8 +351,54 @@ fun HistoryScreen(
                 }
             }
 
+            // 1.9: month-level "unlogged activities" banner (month view only)
+            if (selectedDayKey == null && !bannerHidden &&
+                monthKey !in dismissedMonths && unloggedMonth.isNotEmpty()
+            ) {
+                item {
+                    HistoryUnloggedBanner(
+                        count = unloggedMonth.size,
+                        onAddAll = { photoLogVm.importWorkouts(unloggedMonth) },
+                        onDismiss = { dismissedMonths = dismissedMonths + monthKey },
+                        onHide = { HistoryPreferences.hideUnloggedBanner(context); bannerHidden = true }
+                    )
+                }
+            }
+
+            // 1.9: per-day unlogged Health Connect workouts → tap a row to add
+            if (selectedDayKey != null && unloggedDay.isNotEmpty()) {
+                item {
+                    Row(
+                        modifier = Modifier.fillMaxWidth()
+                            .padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 8.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Icon(
+                            Icons.Default.LocalFireDepartment,
+                            contentDescription = null,
+                            tint = Color(0xFFE91E63),
+                            modifier = Modifier.size(18.dp)
+                        )
+                        Spacer(Modifier.width(6.dp))
+                        Text(
+                            stringResource(R.string.history_unlogged_section),
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.Bold
+                        )
+                    }
+                }
+                items(unloggedDay, key = { "unlogged-${it.externalId}" }) { w ->
+                    HistoryUnloggedWorkoutRow(
+                        workout = w,
+                        onAdd = { photoLogVm.importWorkouts(listOf(w)) }
+                    )
+                    Spacer(Modifier.height(8.dp))
+                }
+            }
+
             // 날짜 선택 && 기록 없음 → iOS 스타일 빈 상태
-            if (selectedDayKey != null && displayLogs.isEmpty() && displayNotes.isEmpty() && displayPhotoLogs.isEmpty()) {
+            if (selectedDayKey != null && displayLogs.isEmpty() && displayNotes.isEmpty() &&
+                displayPhotoLogs.isEmpty() && unloggedDay.isEmpty()) {
                 item {
                     Column(
                         modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 24.dp),
@@ -607,6 +685,121 @@ fun HistoryScreen(
     }
 }
 
+
+@Composable
+private fun HistoryUnloggedBanner(
+    count: Int,
+    onAddAll: () -> Unit,
+    onDismiss: () -> Unit,
+    onHide: () -> Unit
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp),
+        shape = RoundedCornerShape(16.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = MaterialTheme.colorScheme.primaryContainer
+        )
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Row(verticalAlignment = Alignment.CenterVertically) {
+                Icon(
+                    Icons.Default.LocalFireDepartment,
+                    contentDescription = null,
+                    tint = MaterialTheme.colorScheme.onPrimaryContainer,
+                    modifier = Modifier.size(18.dp)
+                )
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    stringResource(R.string.history_unlogged_banner, count),
+                    style = MaterialTheme.typography.bodyMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            }
+            Spacer(Modifier.height(12.dp))
+            Button(
+                onClick = onAddAll,
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text(stringResource(R.string.history_unlogged_add_all), fontWeight = FontWeight.SemiBold)
+            }
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                TextButton(onClick = onDismiss) {
+                    Text(stringResource(R.string.history_unlogged_dismiss))
+                }
+                TextButton(onClick = onHide) {
+                    Text(
+                        stringResource(R.string.history_unlogged_hide),
+                        style = MaterialTheme.typography.labelMedium
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun HistoryUnloggedWorkoutRow(
+    workout: HealthConnectManager.ScannedWorkout,
+    onAdd: () -> Unit
+) {
+    val timeText = remember(workout.startTimeMillis) {
+        SimpleDateFormat("h:mm a", Locale.getDefault()).format(Date(workout.startTimeMillis))
+    }
+    val subText = buildString {
+        if (workout.durationMin > 0) append("${workout.durationMin} min")
+        if (workout.kcal > 0) { if (isNotEmpty()) append(" · "); append("${workout.kcal} kcal") }
+        if (workout.avgBpm > 0) { if (isNotEmpty()) append(" · "); append("${workout.avgBpm} bpm") }
+    }
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(horizontal = 16.dp)
+            .clip(RoundedCornerShape(14.dp))
+            .background(Color(0xFFF4F4F6))
+            .clickable(onClick = onAdd)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.LocalFireDepartment,
+            contentDescription = null,
+            tint = Color(0xFFE91E63),
+            modifier = Modifier.size(18.dp)
+        )
+        Spacer(Modifier.width(10.dp))
+        Column(modifier = Modifier.weight(1f)) {
+            Text(
+                timeText,
+                color = Color(0xFF1A1A1A),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            if (subText.isNotEmpty()) {
+                Text(subText, color = Color(0xFF8A8A8A), fontSize = 11.sp)
+            }
+        }
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            Icon(
+                Icons.Default.Add,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.primary,
+                modifier = Modifier.size(16.dp)
+            )
+            Spacer(Modifier.width(2.dp))
+            Text(
+                stringResource(R.string.history_unlogged_add),
+                color = MaterialTheme.colorScheme.primary,
+                style = MaterialTheme.typography.labelLarge,
+                fontWeight = FontWeight.SemiBold
+            )
+        }
+    }
+}
 
 @Composable
 fun HistoryPhotoLogBanner(photoLog: PhotoLog, onTap: () -> Unit) {
