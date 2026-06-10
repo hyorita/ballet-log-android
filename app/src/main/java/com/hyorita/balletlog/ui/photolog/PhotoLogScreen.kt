@@ -445,9 +445,9 @@ private fun WorkoutGridThumb(
                 Text(
                     "$kcal",
                     color = Color(0xFF111111),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 56.sp
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Light,
+                    lineHeight = 44.sp
                 )
                 Text(
                     "kcal",
