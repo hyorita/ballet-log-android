@@ -413,7 +413,9 @@ private fun WorkoutGridThumb(
     }
     Box(
         modifier = modifier
-            .background(Color(0xFFF4F4F6))
+            // Unify with the Class editor input cards (surfaceContainerHigh) —
+            // also makes the placeholder adapt to the theme instead of a fixed grey.
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onTap)
             .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
