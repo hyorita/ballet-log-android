@@ -40,6 +40,7 @@ import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.WorkoutCard
 import com.hyorita.balletlog.ui.common.findActivity
 import com.hyorita.balletlog.ui.common.shareLogCard
+import com.hyorita.balletlog.util.debugLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -115,7 +116,7 @@ fun DetailScreen(
                                 try {
                                     shareLogCard(context, log, tabIndex)
                                 } catch (e: Exception) {
-                                    android.util.Log.e("ShareLog", "Share failed: ${e.message}", e)
+                                    debugLog("ShareLog", "Share failed: ${e.message}", e)
                                 } finally {
                                     context.findActivity().runOnUiThread {
                                         isSharing = false

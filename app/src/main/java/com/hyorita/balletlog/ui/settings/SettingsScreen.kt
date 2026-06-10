@@ -37,6 +37,7 @@ import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.ProfilePreferences
 import com.hyorita.balletlog.data.TermLanguage
 import com.hyorita.balletlog.data.TermLanguagePreferences
+import com.hyorita.balletlog.util.debugLog
 import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.launch
 
@@ -275,7 +276,7 @@ fun SettingsScreen(
                         } catch (_: android.content.ActivityNotFoundException) {
                             // try next
                         } catch (t: Throwable) {
-                            android.util.Log.w("HealthConnect", "open intent failed", t)
+                            debugLog("HealthConnect", "open intent failed", t)
                         }
                     }
                     // Nothing handled the intent — point at the standalone HC app

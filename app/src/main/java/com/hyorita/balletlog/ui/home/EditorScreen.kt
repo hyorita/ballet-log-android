@@ -49,6 +49,7 @@ import com.hyorita.balletlog.data.TermStore
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.PhotoItem
 import com.hyorita.balletlog.data.model.Step
+import com.hyorita.balletlog.util.debugLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -598,7 +599,7 @@ fun EditorScreen(
             item {
                 OutlinedButton(
                     onClick = {
-                        android.util.Log.d("HealthConnect", "Find Ballet Workout clicked, existingLog=${existingLog?.id ?: "NULL"}")
+                        debugLog("HealthConnect", "Find Ballet Workout clicked, existingLog=${existingLog?.id ?: "NULL"}")
                         // 먼저 저장 후 워크아웃 fetch
                         val newLog = ClassLog.create(
                             date = date,

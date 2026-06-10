@@ -10,6 +10,7 @@ import androidx.health.connect.client.records.TotalCaloriesBurnedRecord
 import androidx.health.connect.client.request.ReadRecordsRequest
 import androidx.health.connect.client.time.TimeRangeFilter
 import com.hyorita.balletlog.data.model.WorkoutInfo
+import com.hyorita.balletlog.util.debugLog
 import java.time.Instant
 import java.time.ZoneId
 import java.time.ZonedDateTime
@@ -111,10 +112,10 @@ object HealthConnectManager {
                 .filter { isBalletRelated(it) }
                 .map { session -> session.toScannedWorkout(client) }
         } catch (e: SecurityException) {
-            android.util.Log.e("HealthConnect", "scanWorkouts permission denied: ${e.message}")
+            debugLog("HealthConnect", "scanWorkouts permission denied: ${e.message}")
             emptyList()
         } catch (e: Exception) {
-            android.util.Log.e("HealthConnect", "scanWorkouts error: ${e.javaClass.simpleName} - ${e.message}")
+            debugLog("HealthConnect", "scanWorkouts error: ${e.javaClass.simpleName} - ${e.message}")
             emptyList()
         }
     }
@@ -191,10 +192,10 @@ object HealthConnectManager {
                 )
             ).records
 
-            // 디버그: 해당 날짜 모든 세션 로그 출력
-            android.util.Log.d("HealthConnect", "Found ${sessions.size} sessions on this date")
+            // 디버그: 해당 날짜 모든 세션 로그 출력 (release 컴파일아웃)
+            debugLog("HealthConnect", "Found ${sessions.size} sessions on this date")
             sessions.forEach { s ->
-                android.util.Log.d("HealthConnect", "Session: type=${s.exerciseType}, title=${s.title}, start=${s.startTime}, end=${s.endTime}")
+                debugLog("HealthConnect", "Session: type=${s.exerciseType}, title=${s.title}, start=${s.startTime}, end=${s.endTime}")
             }
 
             // 모든 타입 허용 - 해당 날짜 첫 번째 워크아웃 사용
@@ -216,10 +217,10 @@ object HealthConnectManager {
                 externalWorkoutId = session.metadata.id
             )
         } catch (e: SecurityException) {
-            android.util.Log.e("HealthConnect", "Permission denied: ${e.message}")
+            debugLog("HealthConnect", "Permission denied: ${e.message}")
             null
         } catch (e: Exception) {
-            android.util.Log.e("HealthConnect", "Error reading workout: ${e.javaClass.simpleName} - ${e.message}")
+            debugLog("HealthConnect", "Error reading workout: ${e.javaClass.simpleName} - ${e.message}")
             null
         }
     }

@@ -30,6 +30,7 @@ import com.hyorita.balletlog.data.BackfillPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.db.BalletLogDatabase
+import com.hyorita.balletlog.util.debugLog
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
@@ -97,7 +98,7 @@ class MainActivity : ComponentActivity() {
         lastAutoImportAt = now
         lifecycleScope.launch {
             runCatching { HealthConnectAutoImport.importRecent(this@MainActivity) }
-                .onFailure { android.util.Log.e("HealthConnect", "auto-import failed", it) }
+                .onFailure { debugLog("HealthConnect", "auto-import failed", it) }
         }
     }
 }
@@ -225,7 +226,7 @@ private fun BackfillPrompt() {
                 scope.launch {
                     val dao = BalletLogDatabase.getInstance(context).photoLogDao()
                     runCatching { HealthConnectAutoImport.importWorkouts(dao, records) }
-                        .onFailure { android.util.Log.e("HealthConnect", "backfill failed", it) }
+                        .onFailure { debugLog("HealthConnect", "backfill failed", it) }
                 }
             }) { Text(stringResource(R.string.backfill_confirm)) }
         },
