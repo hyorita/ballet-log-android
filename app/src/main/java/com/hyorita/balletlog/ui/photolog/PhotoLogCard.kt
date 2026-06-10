@@ -243,16 +243,16 @@ private fun WorkoutPlaceholderCard(
                     Text(
                         text = "$kcal",
                         color = Color.White,
-                        fontSize = 72.sp,
+                        fontSize = 64.sp,
                         fontWeight = FontWeight.Light,
-                        lineHeight = 72.sp
+                        lineHeight = 64.sp
                     )
                     Spacer(Modifier.width(4.dp))
                     Text(
                         text = "kcal",
                         color = Color.White.copy(alpha = 0.7f),
                         fontSize = 16.sp,
-                        modifier = Modifier.padding(bottom = 14.dp)
+                        modifier = Modifier.padding(bottom = 12.dp)
                     )
                 }
             }
