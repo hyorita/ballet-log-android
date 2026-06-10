@@ -176,4 +176,10 @@
     <string name="step_allegro_3">알레그로 3 (제떼)</string>
     <string name="step_medium_allegro">미디엄 알레그로</string>
     <string name="step_grand_allegro">그랑 알레그로</string>
+
+    <!-- Workout backfill (1.9) -->
+    <string name="backfill_title">지난 워크아웃 불러오기</string>
+    <string name="backfill_message">지난 30일 중 아직 로그에 없는 워크아웃 %1$d개를 찾았어요. 전부 추가할까요?</string>
+    <string name="backfill_confirm">모두 추가</string>
+    <string name="backfill_dismiss">나중에</string>
 </resources>

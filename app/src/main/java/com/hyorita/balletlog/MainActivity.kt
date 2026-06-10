@@ -25,8 +25,11 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
 import androidx.lifecycle.lifecycleScope
+import androidx.compose.ui.platform.LocalContext
+import com.hyorita.balletlog.data.BackfillPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
+import com.hyorita.balletlog.data.db.BalletLogDatabase
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
@@ -169,4 +172,65 @@ fun BalletLogApp() {
         }
     }
     }
+
+    BackfillPrompt()
+}
+
+/**
+ * 1.9 connect-time backfill. On the first launch with Health Connect granted,
+ * scan the last 30 days for ballet workouts not yet in the log and offer to add
+ * them all at once. Shown at most once (see [BackfillPreferences]); a launch
+ * that finds nothing doesn't consume the offer.
+ *
+ * Unlike iOS — which needed a custom overlay because a SwiftUI .alert wouldn't
+ * present near the TabView — a plain Material AlertDialog hosted at the app root
+ * is enough on Android.
+ */
+@Composable
+private fun BackfillPrompt() {
+    val context = LocalContext.current
+    val scope = rememberCoroutineScope()
+    var pending by remember {
+        mutableStateOf<List<HealthConnectManager.ScannedWorkout>>(emptyList())
+    }
+
+    LaunchedEffect(Unit) {
+        if (BackfillPreferences.hasPrompted(context)) return@LaunchedEffect
+        if (!HealthConnectManager.hasPermissions(context)) return@LaunchedEffect
+        val end = System.currentTimeMillis()
+        val start = end - 30L * 24 * 60 * 60 * 1000
+        val records = HealthConnectManager.scanWorkouts(context, start, end)
+        if (records.isEmpty()) return@LaunchedEffect
+        val dao = BalletLogDatabase.getInstance(context).photoLogDao()
+        val already = dao.getAllExternalWorkoutIds().toHashSet()
+        val fresh = records.filter { it.externalId !in already }
+        if (fresh.isNotEmpty()) pending = fresh
+    }
+
+    if (pending.isEmpty()) return
+
+    val records = pending
+    val dismiss: () -> Unit = {
+        BackfillPreferences.setPrompted(context)
+        pending = emptyList()
+    }
+    AlertDialog(
+        onDismissRequest = dismiss,
+        title = { Text(stringResource(R.string.backfill_title)) },
+        text = { Text(stringResource(R.string.backfill_message, records.size)) },
+        confirmButton = {
+            TextButton(onClick = {
+                BackfillPreferences.setPrompted(context)
+                pending = emptyList()
+                scope.launch {
+                    val dao = BalletLogDatabase.getInstance(context).photoLogDao()
+                    runCatching { HealthConnectAutoImport.importWorkouts(dao, records) }
+                        .onFailure { android.util.Log.e("HealthConnect", "backfill failed", it) }
+                }
+            }) { Text(stringResource(R.string.backfill_confirm)) }
+        },
+        dismissButton = {
+            TextButton(onClick = dismiss) { Text(stringResource(R.string.backfill_dismiss)) }
+        }
+    )
 }

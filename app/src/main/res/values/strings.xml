@@ -176,4 +176,10 @@
     <string name="step_allegro_3">Allegro 3 (Jetés)</string>
     <string name="step_medium_allegro">Medium allegro</string>
     <string name="step_grand_allegro">Grand allegro</string>
+
+    <!-- Workout backfill (1.9) -->
+    <string name="backfill_title">Bring in past workouts</string>
+    <string name="backfill_message">Ballet Log found %1$d workout(s) from your last 30 days that aren\'t in your log yet. Add them all?</string>
+    <string name="backfill_confirm">Add all</string>
+    <string name="backfill_dismiss">Not now</string>
 </resources>

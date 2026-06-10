@@ -176,4 +176,10 @@
     <string name="step_allegro_3">アレグロ 3（ジュテ）</string>
     <string name="step_medium_allegro">ミディアム・アレグロ</string>
     <string name="step_grand_allegro">グラン・アレグロ</string>
+
+    <!-- Workout backfill (1.9) -->
+    <string name="backfill_title">過去のワークアウトを取り込む</string>
+    <string name="backfill_message">過去30日間でまだログにないワークアウトが%1$d件見つかりました。すべて追加しますか？</string>
+    <string name="backfill_confirm">すべて追加</string>
+    <string name="backfill_dismiss">あとで</string>
 </resources>
