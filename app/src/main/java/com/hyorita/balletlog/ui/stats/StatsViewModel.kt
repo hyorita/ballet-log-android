@@ -26,9 +26,14 @@ data class StatsAggregates(
     // the source may be a ClassLog workout or an imported PhotoLog placeholder.
     val hardestCalories: Int? = null,
     val hardestDate: Long? = null,
+    // The ClassLog behind the hardest workout, if it was a class (not a
+    // placeholder) — lets the Stats card navigate to its detail.
+    val hardestLog: ClassLog? = null,
     val topViewed: List<ClassLog> = emptyList(),
     val cubeData: List<Int> = emptyList(),
     val cubeLabels: List<String> = emptyList(),
+    // Per-period workout-time chart values (WEEK: min/day, MONTH: avg min/week).
+    val timeData: List<Int> = emptyList(),
     val monthlyClassCounts: List<Int> = emptyList(),
     val monthlyAvgMinutes: List<Int> = emptyList()
 )
@@ -44,7 +49,7 @@ private data class StatItem(
     val durationMinutes: Int,
     val activeCalories: Int,
     val externalWorkoutId: String?,
-    val isClassLog: Boolean
+    val classLog: ClassLog?
 )
 
 class StatsViewModel(app: Application) : AndroidViewModel(app) {
@@ -86,7 +91,7 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
                 durationMinutes = log.workout?.durationMinutes ?: 0,
                 activeCalories = log.workout?.activeCalories ?: 0,
                 externalWorkoutId = log.workout?.externalWorkoutId,
-                isClassLog = true
+                classLog = log
             )
         }
         val photoItems = photos
@@ -97,7 +102,7 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
                     durationMinutes = p.durationMin ?: 0,
                     activeCalories = p.kcal ?: 0,
                     externalWorkoutId = p.externalWorkoutId,
-                    isClassLog = false
+                    classLog = null
                 )
             }
         dedupeByIdentity(classItems + photoItems)
@@ -146,7 +151,7 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         val seen = HashSet<String>()
         val out = ArrayList<StatItem>(items.size)
         // ClassLog items first so they win an externalId tie over a placeholder.
-        items.sortedByDescending { it.isClassLog }.forEach { item ->
+        items.sortedByDescending { it.classLog != null }.forEach { item ->
             val id = item.externalWorkoutId
             if (id == null || seen.add(id)) out.add(item)
         }
@@ -214,6 +219,7 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             .take(5)
 
         val (cubeData, cubeLabels) = buildCubeData(items, period)
+        val timeData = if (period == StatsPeriod.YEAR) emptyList() else buildTimeData(items, period)
         val monthlyClassCounts = if (period == StatsPeriod.YEAR) buildMonthlyCounts(items) else emptyList()
         val monthlyAvgMinutes = if (period == StatsPeriod.YEAR) buildMonthlyAvgMinutes(items) else emptyList()
 
@@ -223,12 +229,51 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             totalCalories = totalCalories,
             hardestCalories = hardest?.activeCalories,
             hardestDate = hardest?.date,
+            hardestLog = hardest?.classLog,
             topViewed = topViewed,
             cubeData = cubeData,
             cubeLabels = cubeLabels,
+            timeData = timeData,
             monthlyClassCounts = monthlyClassCounts,
             monthlyAvgMinutes = monthlyAvgMinutes
         )
+    }
+
+    /**
+     * 1.9: workout-time chart values for WEEK (total minutes per weekday) and
+     * MONTH (average minutes per week-of-month). YEAR uses monthlyAvgMinutes.
+     */
+    private fun buildTimeData(items: List<StatItem>, period: StatsPeriod): List<Int> {
+        return when (period) {
+            StatsPeriod.WEEK -> {
+                val sums = IntArray(7)
+                items.forEach { item ->
+                    if (item.durationMinutes > 0) {
+                        val cal = Calendar.getInstance().also { it.timeInMillis = item.date }
+                        sums[cal.get(Calendar.DAY_OF_WEEK) - 1] += item.durationMinutes
+                    }
+                }
+                sums.toList()
+            }
+            StatsPeriod.MONTH -> {
+                val sum = IntArray(5)
+                val count = IntArray(5)
+                items.forEach { item ->
+                    if (item.durationMinutes > 0) {
+                        val cal = Calendar.getInstance().apply {
+                            timeInMillis = item.date
+                            firstDayOfWeek = Calendar.SUNDAY
+                            minimalDaysInFirstWeek = 1
+                        }
+                        val w = (cal.get(Calendar.WEEK_OF_MONTH) - 1).coerceIn(0, 4)
+                        sum[w] += item.durationMinutes
+                        count[w]++
+                    }
+                }
+                (0 until 5).map { if (count[it] > 0) sum[it] / count[it] else 0 }
+            }
+            StatsPeriod.YEAR -> emptyList()
+        }
     }
 
     private fun buildCubeData(

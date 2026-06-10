@@ -1,6 +1,10 @@
 package com.hyorita.balletlog.ui.stats
 
 import androidx.compose.foundation.Canvas
+import androidx.compose.foundation.clickable
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.style.TextAlign
+import com.hyorita.balletlog.R
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -88,17 +92,19 @@ fun StatsScreen(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Text(
-                "Stats",
+                stringResource(R.string.stats_title),
                 style = MaterialTheme.typography.headlineSmall,
                 fontWeight = FontWeight.Bold
             )
             Spacer(Modifier.weight(1f))
-            IconButton(onClick = {
-                val chartTitle = when (period) {
-                    StatsPeriod.WEEK -> "Classes — last 7 days"
-                    StatsPeriod.MONTH -> "Classes per week"
-                    StatsPeriod.YEAR -> "Classes per month"
+            val chartTitle = stringResource(
+                when (period) {
+                    StatsPeriod.WEEK -> R.string.stats_chart_classes_week
+                    StatsPeriod.MONTH -> R.string.stats_chart_classes_month
+                    StatsPeriod.YEAR -> R.string.stats_chart_classes_year
                 }
+            )
+            IconButton(onClick = {
                 val chartData = if (period == StatsPeriod.YEAR) {
                     val months = listOf("J","F","M","A","M","J","J","A","S","O","N","D")
                     aggregates.monthlyClassCounts.mapIndexed { i, count -> months[i] to count }
@@ -163,35 +169,44 @@ fun StatsScreen(
                 }
             }
 
-            item { MetricsGrid(aggregates) }
+            if (aggregates.totalClasses == 0) {
+                item { StatsEmptyState() }
+            } else {
+                item { MetricsGrid(aggregates, onHardestTap = { aggregates.hardestLog?.let(onNavigateToLog) }) }
 
-            item {
-                if (period == StatsPeriod.YEAR) {
-                    YearChart(aggregates)
-                } else {
-                    CubeChart(aggregates)
-                }
-            }
-
-            if (aggregates.topViewed.isNotEmpty()) {
                 item {
-                    Row(verticalAlignment = Alignment.CenterVertically) {
-                        Icon(
-                            Icons.Default.Visibility,
-                            contentDescription = null,
-                            modifier = Modifier.size(18.dp),
-                            tint = MaterialTheme.colorScheme.onSurface
-                        )
-                        Spacer(Modifier.width(6.dp))
-                        Text(
-                            "Top Viewed",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.Bold
-                        )
+                    if (period == StatsPeriod.YEAR) {
+                        YearChart(aggregates)
+                    } else {
+                        CubeChart(aggregates, period)
                     }
                 }
-                items(aggregates.topViewed, key = { "tv_${it.id}" }) { log ->
-                    TopViewedRow(log = log, onTap = { onNavigateToLog(log) })
+
+                // 1.9: workout-time chart for week/month (year's time line lives in YearChart)
+                if (period != StatsPeriod.YEAR && aggregates.timeData.any { it > 0 }) {
+                    item { TimeChart(aggregates, period) }
+                }
+
+                if (aggregates.topViewed.isNotEmpty()) {
+                    item {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Icon(
+                                Icons.Default.Visibility,
+                                contentDescription = null,
+                                modifier = Modifier.size(18.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
+                            )
+                            Spacer(Modifier.width(6.dp))
+                            Text(
+                                stringResource(R.string.stats_top_viewed),
+                                style = MaterialTheme.typography.titleMedium,
+                                fontWeight = FontWeight.Bold
+                            )
+                        }
+                    }
+                    items(aggregates.topViewed, key = { "tv_${it.id}" }) { log ->
+                        TopViewedRow(log = log, onTap = { onNavigateToLog(log) })
+                    }
                 }
             }
 
@@ -215,7 +230,13 @@ private fun PeriodSelector(
                 shape = SegmentedButtonDefaults.itemShape(index = index, count = options.size),
                 label = {
                     Text(
-                        p.name.lowercase().replaceFirstChar { it.uppercase() },
+                        stringResource(
+                            when (p) {
+                                StatsPeriod.WEEK -> R.string.stats_period_week
+                                StatsPeriod.MONTH -> R.string.stats_period_month
+                                StatsPeriod.YEAR -> R.string.stats_period_year
+                            }
+                        ),
                         fontWeight = FontWeight.SemiBold
                     )
                 }
@@ -225,7 +246,7 @@ private fun PeriodSelector(
 }
 
 @Composable
-private fun MetricsGrid(aggregates: StatsAggregates) {
+private fun MetricsGrid(aggregates: StatsAggregates, onHardestTap: () -> Unit = {}) {
     val hardestSub = aggregates.hardestDate?.let {
         SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(it))
     }
@@ -237,14 +258,14 @@ private fun MetricsGrid(aggregates: StatsAggregates) {
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.FitnessCenter,
                 iconTint = Color(0xFFE91E63),
-                label = "Classes",
+                label = stringResource(R.string.stats_classes),
                 value = aggregates.totalClasses.toString()
             )
             MetricCard(
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.Schedule,
                 iconTint = Color(0xFF2196F3),
-                label = "Workout Time",
+                label = stringResource(R.string.stats_workout_time),
                 value = formatDuration(aggregates.totalMinutes)
             )
         }
@@ -260,9 +281,10 @@ private fun MetricsGrid(aggregates: StatsAggregates) {
                 modifier = Modifier.weight(1f),
                 icon = Icons.Default.EmojiEvents,
                 iconTint = Color(0xFFFFB300),
-                label = "Hardest Workout",
+                label = stringResource(R.string.stats_hardest_workout),
                 value = hardestValue,
-                sub = hardestSub
+                sub = hardestSub,
+                onClick = if (aggregates.hardestLog != null) onHardestTap else null
             )
         }
     }
@@ -275,10 +297,13 @@ private fun MetricCard(
     iconTint: Color,
     label: String,
     value: String,
-    sub: String? = null
+    sub: String? = null,
+    onClick: (() -> Unit)? = null
 ) {
     Card(
-        modifier = modifier.aspectRatio(1f),
+        modifier = modifier
+            .aspectRatio(1f)
+            .then(if (onClick != null) Modifier.clickable(onClick = onClick) else Modifier),
         shape = RoundedCornerShape(14.dp),
         colors = CardDefaults.cardColors(
             containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
@@ -341,7 +366,67 @@ private fun formatDuration(totalMinutes: Int): String {
 }
 
 @Composable
-private fun CubeChart(aggregates: StatsAggregates) {
+private fun StatsEmptyState() {
+    Column(
+        modifier = Modifier.fillMaxWidth().padding(vertical = 48.dp),
+        horizontalAlignment = Alignment.CenterHorizontally,
+        verticalArrangement = Arrangement.spacedBy(12.dp)
+    ) {
+        Text("🩰", fontSize = 44.sp)
+        Text(
+            stringResource(R.string.stats_empty_title),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.SemiBold
+        )
+        Text(
+            stringResource(R.string.stats_empty_subtitle),
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant,
+            textAlign = TextAlign.Center
+        )
+    }
+}
+
+/** 1.9: workout-time chart for WEEK/MONTH (bar). Year's time chart is in YearChart. */
+@Composable
+private fun TimeChart(aggregates: StatsAggregates, period: StatsPeriod) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(14.dp),
+        colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+        elevation = CardDefaults.cardElevation(defaultElevation = 0.dp)
+    ) {
+        Column(modifier = Modifier.padding(16.dp)) {
+            Text(
+                stringResource(
+                    if (period == StatsPeriod.MONTH) R.string.stats_chart_time_month
+                    else R.string.stats_chart_time_week
+                ),
+                fontSize = 13.sp,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontWeight = FontWeight.SemiBold
+            )
+            Spacer(Modifier.height(12.dp))
+            BarChartView(
+                values = aggregates.timeData,
+                modifier = Modifier.fillMaxWidth().height(80.dp),
+                barColor = PinkMid
+            )
+            Spacer(Modifier.height(6.dp))
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                aggregates.cubeLabels.forEach {
+                    Text(it, fontSize = 10.sp, color = MaterialTheme.colorScheme.onSurfaceVariant)
+                }
+            }
+        }
+    }
+}
+
+@Composable
+private fun CubeChart(aggregates: StatsAggregates, period: StatsPeriod) {
     val counts = aggregates.cubeData
     val labels = aggregates.cubeLabels
     val maxCount = counts.maxOrNull() ?: 0
@@ -355,7 +440,13 @@ private fun CubeChart(aggregates: StatsAggregates) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Classes",
+                stringResource(
+                    when (period) {
+                        StatsPeriod.WEEK -> R.string.stats_chart_classes_week
+                        StatsPeriod.MONTH -> R.string.stats_chart_classes_month
+                        StatsPeriod.YEAR -> R.string.stats_chart_classes_year
+                    }
+                ),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold
@@ -423,7 +514,7 @@ private fun YearChart(aggregates: StatsAggregates) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                "Avg workout time (min)",
+                stringResource(R.string.stats_chart_time_year),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold
@@ -438,7 +529,7 @@ private fun YearChart(aggregates: StatsAggregates) {
             )
             Spacer(Modifier.height(18.dp))
             Text(
-                "Classes per month",
+                stringResource(R.string.stats_chart_classes_year),
                 fontSize = 13.sp,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontWeight = FontWeight.SemiBold
