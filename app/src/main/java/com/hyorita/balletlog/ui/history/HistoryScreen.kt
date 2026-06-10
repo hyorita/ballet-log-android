@@ -380,19 +380,20 @@ fun HistoryScreen(
                             style = MaterialTheme.typography.bodyMedium,
                             color = MaterialTheme.colorScheme.onSurfaceVariant
                         )
-                        Button(
-                            onClick = { selectedLog = null; showEditor = true },
-                            modifier = Modifier.fillMaxWidth().height(56.dp),
-                            shape = RoundedCornerShape(16.dp),
-                            colors = ButtonDefaults.buttonColors(
-                                containerColor = Color.Black,
-                                contentColor = Color.White
+                        // iOS uses a plain (borderless) icon + text, not a filled button.
+                        TextButton(onClick = { selectedLog = null; showEditor = true }) {
+                            Icon(
+                                Icons.Default.Add,
+                                contentDescription = null,
+                                modifier = Modifier.size(24.dp),
+                                tint = MaterialTheme.colorScheme.onSurface
                             )
-                        ) {
+                            Spacer(Modifier.width(8.dp))
                             Text(
-                                "+ ${stringResource(R.string.record_class)}",
+                                stringResource(R.string.record_class),
                                 fontWeight = FontWeight.SemiBold,
-                                fontSize = 17.sp
+                                fontSize = 20.sp,
+                                color = MaterialTheme.colorScheme.onSurface
                             )
                         }
                     }
