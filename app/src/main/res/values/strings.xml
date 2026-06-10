@@ -190,4 +190,25 @@
     <string name="history_unlogged_hide">Don\'t show again</string>
     <string name="history_unlogged_section">Not in your log yet</string>
     <string name="history_unlogged_add">Add</string>
+
+    <!-- 1.9 iOS parity (text + Stats localization) -->
+    <string name="add">Add</string>
+    <string name="note_tag_placeholder">e.g. épaulement, alignment</string>
+    <string name="remove_workout">Remove Workout</string>
+    <string name="stats_title">Stats</string>
+    <string name="stats_classes">Classes</string>
+    <string name="stats_workout_time">Workout Time</string>
+    <string name="stats_hardest_workout">Hardest Workout</string>
+    <string name="stats_top_viewed">Top Viewed</string>
+    <string name="stats_period_week">Week</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_year">Year</string>
+    <string name="stats_chart_classes_week">Classes — last 7 days</string>
+    <string name="stats_chart_classes_month">Classes per week</string>
+    <string name="stats_chart_classes_year">Classes per month</string>
+    <string name="stats_chart_time_week">Workout time per day (min)</string>
+    <string name="stats_chart_time_month">Avg workout time per week (min)</string>
+    <string name="stats_chart_time_year">Avg workout time per month (min)</string>
+    <string name="stats_empty_title">No classes yet</string>
+    <string name="stats_empty_subtitle">Start logging classes to see your stats here.</string>
 </resources>

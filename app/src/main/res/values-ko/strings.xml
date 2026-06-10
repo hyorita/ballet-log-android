@@ -190,4 +190,25 @@
     <string name="history_unlogged_hide">다시 보지 않기</string>
     <string name="history_unlogged_section">아직 기록 안 됨</string>
     <string name="history_unlogged_add">추가</string>
+
+    <!-- 1.9 iOS parity (text + Stats localization) -->
+    <string name="add">추가</string>
+    <string name="note_tag_placeholder">예: 에뽈망, 폴드브라</string>
+    <string name="remove_workout">운동 삭제</string>
+    <string name="stats_title">통계</string>
+    <string name="stats_classes">수업</string>
+    <string name="stats_workout_time">운동 시간</string>
+    <string name="stats_hardest_workout">최고강도 운동</string>
+    <string name="stats_top_viewed">많이 본 수업</string>
+    <string name="stats_period_week">이번 주</string>
+    <string name="stats_period_month">이번 달</string>
+    <string name="stats_period_year">연간</string>
+    <string name="stats_chart_classes_week">최근 7일 수업</string>
+    <string name="stats_chart_classes_month">주간 수업 횟수</string>
+    <string name="stats_chart_classes_year">월간 수업 횟수</string>
+    <string name="stats_chart_time_week">요일별 운동 시간 (분)</string>
+    <string name="stats_chart_time_month">주간 평균 운동 시간 (분)</string>
+    <string name="stats_chart_time_year">월간 평균 운동 시간 (분)</string>
+    <string name="stats_empty_title">아직 수업 기록이 없어요</string>
+    <string name="stats_empty_subtitle">수업을 기록하면 여기서 통계를 볼 수 있어요.</string>
 </resources>

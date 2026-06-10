@@ -233,7 +233,7 @@ fun NoteDetailScreen(
         AlertDialog(
             onDismissRequest = { showDeleteConfirm = false },
             title = { Text(stringResource(R.string.delete_note_title)) },
-            text = { Text(stringResource(R.string.delete_note_title)) },
+            text = { Text(stringResource(R.string.delete_note_message)) },
             confirmButton = {
                 TextButton(onClick = {
                     showDeleteConfirm = false

@@ -281,7 +281,7 @@ fun NoteEditorScreen(
                     OutlinedTextField(
                         value = newTagInput,
                         onValueChange = { newTagInput = it },
-                        placeholder = { Text("e.g. épaulement, alignment") },
+                        placeholder = { Text(stringResource(R.string.note_tag_placeholder)) },
                         modifier = Modifier.fillMaxWidth(),
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(imeAction = ImeAction.Done),
@@ -297,7 +297,7 @@ fun NoteEditorScreen(
                                         selectedTags.add(tag)
                                     }
                                     newTagInput = ""
-                                }) { Text("Add") }
+                                }) { Text(stringResource(R.string.add)) }
                             }
                         }
                     )
