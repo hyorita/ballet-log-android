@@ -24,6 +24,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.health.connect.client.HealthConnectClient
 import androidx.health.connect.client.PermissionController
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.ui.platform.LocalContext
 import com.hyorita.balletlog.data.BackfillPreferences
@@ -31,6 +33,7 @@ import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.db.BalletLogDatabase
 import com.hyorita.balletlog.util.debugLog
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
@@ -194,18 +197,50 @@ private fun BackfillPrompt() {
     var pending by remember {
         mutableStateOf<List<HealthConnectManager.ScannedWorkout>>(emptyList())
     }
+    // Stop re-checking once we've shown the prompt or confirmed (with permission
+    // granted) there's nothing to offer this process.
+    var handled by remember { mutableStateOf(false) }
+    var inFlight by remember { mutableStateOf(false) }
 
-    LaunchedEffect(Unit) {
-        if (BackfillPreferences.hasPrompted(context)) return@LaunchedEffect
-        if (!HealthConnectManager.hasPermissions(context)) return@LaunchedEffect
-        val end = System.currentTimeMillis()
-        val start = end - 30L * 24 * 60 * 60 * 1000
-        val records = HealthConnectManager.scanWorkouts(context, start, end)
-        if (records.isEmpty()) return@LaunchedEffect
-        val dao = BalletLogDatabase.getInstance(context).photoLogDao()
-        val already = dao.getAllExternalWorkoutIds().toHashSet()
-        val fresh = records.filter { it.externalId !in already }
-        if (fresh.isNotEmpty()) pending = fresh
+    // Run on each ON_RESUME, not just first composition. Two cold-start races
+    // would otherwise drop the one-time offer: a brand-new user grants Health
+    // Connect via the system dialog *after* the app starts, and on a cold start
+    // the HC client can briefly report "not granted" before warming up.
+    // Resuming (returning from the dialog) re-checks, and a short poll absorbs
+    // the warmup; the History banner remains the durable fallback regardless.
+    val lifecycle = androidx.compose.ui.platform.LocalLifecycleOwner.current.lifecycle
+    DisposableEffect(lifecycle) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event != Lifecycle.Event.ON_RESUME || handled || inFlight) return@LifecycleEventObserver
+            inFlight = true
+            scope.launch {
+                try {
+                    if (BackfillPreferences.hasPrompted(context)) { handled = true; return@launch }
+                    if (!HealthConnectManager.isAvailable(context)) return@launch
+                    // Tolerate cold-start warmup: poll briefly before giving up.
+                    var granted = false
+                    var tries = 0
+                    while (tries < 8 && !granted) {
+                        granted = HealthConnectManager.hasPermissions(context)
+                        if (!granted) delay(500)
+                        tries++
+                    }
+                    if (!granted) return@launch // not granted yet — retry next resume
+                    val end = System.currentTimeMillis()
+                    val start = end - 30L * 24 * 60 * 60 * 1000
+                    val records = HealthConnectManager.scanWorkouts(context, start, end)
+                    val dao = BalletLogDatabase.getInstance(context).photoLogDao()
+                    val already = dao.getAllExternalWorkoutIds().toHashSet()
+                    val fresh = records.filter { it.externalId !in already }
+                    handled = true
+                    if (fresh.isNotEmpty()) pending = fresh
+                } finally {
+                    inFlight = false
+                }
+            }
+        }
+        lifecycle.addObserver(observer)
+        onDispose { lifecycle.removeObserver(observer) }
     }
 
     if (pending.isEmpty()) return
