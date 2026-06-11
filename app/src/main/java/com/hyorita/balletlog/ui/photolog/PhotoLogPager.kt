@@ -40,6 +40,7 @@ import androidx.compose.ui.unit.sp
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.PhotoLog
 import com.hyorita.balletlog.ui.common.sharePhotoLog
+import com.hyorita.balletlog.util.debugLog
 import kotlin.math.roundToInt
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -141,7 +142,7 @@ fun PhotoLogPager(
                         try {
                             sharePhotoLog(context, log)
                         } catch (e: Throwable) {
-                            android.util.Log.e("PhotoLogShare", "render failed", e)
+                            debugLog("PhotoLogShare", "render failed", e)
                         } finally {
                             isSharing = false
                         }

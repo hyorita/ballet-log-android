@@ -413,7 +413,9 @@ private fun WorkoutGridThumb(
     }
     Box(
         modifier = modifier
-            .background(Color(0xFFF4F4F6))
+            // Unify with the Class editor input cards (surfaceContainerHigh) —
+            // also makes the placeholder adapt to the theme instead of a fixed grey.
+            .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onTap)
             .padding(horizontal = 14.dp, vertical = 12.dp)
     ) {
@@ -429,7 +431,7 @@ private fun WorkoutGridThumb(
         }
         Text(
             shortDate,
-            color = Color(0xFF1A1A1A),
+            color = MaterialTheme.colorScheme.onSurface,
             fontSize = 14.sp,
             fontWeight = FontWeight.SemiBold,
             modifier = Modifier.align(Alignment.TopStart)
@@ -444,14 +446,14 @@ private fun WorkoutGridThumb(
             ) {
                 Text(
                     "$kcal",
-                    color = Color(0xFF111111),
-                    fontSize = 56.sp,
-                    fontWeight = FontWeight.SemiBold,
-                    lineHeight = 56.sp
+                    color = MaterialTheme.colorScheme.onSurface,
+                    fontSize = 44.sp,
+                    fontWeight = FontWeight.Light,
+                    lineHeight = 44.sp
                 )
                 Text(
                     "kcal",
-                    color = Color(0xFF999999),
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
                     fontSize = 13.sp,
                     modifier = Modifier.padding(bottom = 10.dp, start = 2.dp)
                 )
@@ -460,7 +462,7 @@ private fun WorkoutGridThumb(
         if (subText.isNotEmpty()) {
             Text(
                 subText,
-                color = Color(0xFF8A8A8A),
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
                 fontSize = 11.sp,
                 modifier = Modifier.align(Alignment.BottomStart)
             )

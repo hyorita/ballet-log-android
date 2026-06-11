@@ -30,7 +30,7 @@
     <string name="photolog_recent_tags">Recent</string>
     <string name="photolog_tag_delete_title">Delete tag?</string>
     <string name="photolog_share">Share</string>
-    <string name="history_photo_logs">Photo Logs</string>
+    <string name="history_photo_logs">Logs</string>
 
     <!-- Settings -->
     <string name="settings_profile">Profile</string>
@@ -176,4 +176,39 @@
     <string name="step_allegro_3">Allegro 3 (Jetés)</string>
     <string name="step_medium_allegro">Medium allegro</string>
     <string name="step_grand_allegro">Grand allegro</string>
+
+    <!-- Workout backfill (1.9) -->
+    <string name="backfill_title">Bring in past workouts</string>
+    <string name="backfill_message">Ballet Log found %1$d workout(s) from your last 30 days that aren\'t in your log yet. Add them all?</string>
+    <string name="backfill_confirm">Add all</string>
+    <string name="backfill_dismiss">Not now</string>
+
+    <!-- History unlogged-workout import (1.9) -->
+    <string name="history_unlogged_banner">%1$d workout(s) this month aren\'t in your log yet</string>
+    <string name="history_unlogged_add_all">Add all to log</string>
+    <string name="history_unlogged_dismiss">Dismiss</string>
+    <string name="history_unlogged_hide">Don\'t show again</string>
+    <string name="history_unlogged_section">Not in your log yet</string>
+    <string name="history_unlogged_add">Add</string>
+
+    <!-- 1.9 iOS parity (text + Stats localization) -->
+    <string name="add">Add</string>
+    <string name="note_tag_placeholder">e.g. épaulement, alignment</string>
+    <string name="remove_workout">Remove Workout</string>
+    <string name="stats_title">Stats</string>
+    <string name="stats_classes">Classes</string>
+    <string name="stats_workout_time">Workout Time</string>
+    <string name="stats_hardest_workout">Hardest Workout</string>
+    <string name="stats_top_viewed">Top Viewed</string>
+    <string name="stats_period_week">Week</string>
+    <string name="stats_period_month">Month</string>
+    <string name="stats_period_year">Year</string>
+    <string name="stats_chart_classes_week">Classes — last 7 days</string>
+    <string name="stats_chart_classes_month">Classes per week</string>
+    <string name="stats_chart_classes_year">Classes per month</string>
+    <string name="stats_chart_time_week">Workout time per day (min)</string>
+    <string name="stats_chart_time_month">Avg workout time per week (min)</string>
+    <string name="stats_chart_time_year">Avg workout time per month (min)</string>
+    <string name="stats_empty_title">No classes yet</string>
+    <string name="stats_empty_subtitle">Start logging classes to see your stats here.</string>
 </resources>

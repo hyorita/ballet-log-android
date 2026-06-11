@@ -30,7 +30,7 @@
     <string name="photolog_recent_tags">最近の入力</string>
     <string name="photolog_tag_delete_title">タグを削除しますか？</string>
     <string name="photolog_share">共有</string>
-    <string name="history_photo_logs">フォトログ</string>
+    <string name="history_photo_logs">ログ</string>
 
     <!-- Settings -->
     <string name="settings_profile">プロフィール</string>
@@ -176,4 +176,39 @@
     <string name="step_allegro_3">アレグロ 3（ジュテ）</string>
     <string name="step_medium_allegro">ミディアム・アレグロ</string>
     <string name="step_grand_allegro">グラン・アレグロ</string>
+
+    <!-- Workout backfill (1.9) -->
+    <string name="backfill_title">過去のワークアウトを取り込む</string>
+    <string name="backfill_message">過去30日間でまだログにないワークアウトが%1$d件見つかりました。すべて追加しますか？</string>
+    <string name="backfill_confirm">すべて追加</string>
+    <string name="backfill_dismiss">あとで</string>
+
+    <!-- History unlogged-workout import (1.9) -->
+    <string name="history_unlogged_banner">今月まだログにないワークアウトが%1$d件</string>
+    <string name="history_unlogged_add_all">すべてログに追加</string>
+    <string name="history_unlogged_dismiss">閉じる</string>
+    <string name="history_unlogged_hide">今後表示しない</string>
+    <string name="history_unlogged_section">まだ未記録</string>
+    <string name="history_unlogged_add">追加</string>
+
+    <!-- 1.9 iOS parity (text + Stats localization) -->
+    <string name="add">追加</string>
+    <string name="note_tag_placeholder">例：エポールマン、アラインメント</string>
+    <string name="remove_workout">ワークアウト削除</string>
+    <string name="stats_title">統計</string>
+    <string name="stats_classes">レッスン</string>
+    <string name="stats_workout_time">運動時間</string>
+    <string name="stats_hardest_workout">最もハードな運動</string>
+    <string name="stats_top_viewed">よく見るレッスン</string>
+    <string name="stats_period_week">今週</string>
+    <string name="stats_period_month">今月</string>
+    <string name="stats_period_year">今年</string>
+    <string name="stats_chart_classes_week">直近7日間のレッスン</string>
+    <string name="stats_chart_classes_month">週のレッスン</string>
+    <string name="stats_chart_classes_year">月のレッスン</string>
+    <string name="stats_chart_time_week">曜日別運動時間（分）</string>
+    <string name="stats_chart_time_month">週平均運動時間（分）</string>
+    <string name="stats_chart_time_year">月平均運動時間（分）</string>
+    <string name="stats_empty_title">レッスンなし</string>
+    <string name="stats_empty_subtitle">レッスン記録で統計表示</string>
 </resources>

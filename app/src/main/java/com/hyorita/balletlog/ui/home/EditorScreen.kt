@@ -29,6 +29,8 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.input.nestedscroll.nestedScroll
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.TextRange
@@ -40,6 +42,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
+import com.hyorita.balletlog.ui.common.youTubeVideoId
 import androidx.compose.ui.res.stringResource
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.DefaultSteps
@@ -49,6 +52,7 @@ import com.hyorita.balletlog.data.TermStore
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.PhotoItem
 import com.hyorita.balletlog.data.model.Step
+import com.hyorita.balletlog.util.debugLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -337,6 +341,17 @@ fun EditorScreen(
                                     Text("❤️ ${workout.avgHeartRate}bpm",
                                         style = MaterialTheme.typography.bodyMedium)
                             }
+                            Spacer(modifier = Modifier.height(4.dp))
+                            // iOS parity: detach the attached workout
+                            TextButton(
+                                onClick = { fetchedWorkout = null },
+                                contentPadding = PaddingValues(horizontal = 0.dp)
+                            ) {
+                                Text(
+                                    stringResource(R.string.remove_workout),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            }
                         }
                     }
                 }
@@ -577,12 +592,13 @@ fun EditorScreen(
                             style = MaterialTheme.typography.labelSmall,
                             color = MaterialTheme.colorScheme.primary)
                         Spacer(Modifier.height(6.dp))
+                        val musicUrl = if (tabIndex == 0) barreMusic else centerMusic
                         OutlinedTextField(
-                            value = if (tabIndex == 0) barreMusic else centerMusic,
+                            value = musicUrl,
                             onValueChange = {
                                 if (tabIndex == 0) barreMusic = it else centerMusic = it
                             },
-                            placeholder = { Text("https://youtube.com/...") },
+                            placeholder = { Text(stringResource(R.string.youtube_url)) },
                             modifier = Modifier.fillMaxWidth(),
                             singleLine = true,
                             keyboardOptions = KeyboardOptions(
@@ -590,6 +606,21 @@ fun EditorScreen(
                                 imeAction = ImeAction.Done
                             )
                         )
+                        // iOS parity: live YouTube thumbnail preview
+                        val videoId = remember(musicUrl) { youTubeVideoId(musicUrl) }
+                        if (videoId != null) {
+                            Spacer(Modifier.height(10.dp))
+                            AsyncImage(
+                                model = "https://img.youtube.com/vi/$videoId/mqdefault.jpg",
+                                contentDescription = null,
+                                contentScale = ContentScale.Crop,
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .height(160.dp)
+                                    .clip(RoundedCornerShape(10.dp))
+                                    .background(Color.Black)
+                            )
+                        }
                     }
                 }
             }
@@ -598,7 +629,7 @@ fun EditorScreen(
             item {
                 OutlinedButton(
                     onClick = {
-                        android.util.Log.d("HealthConnect", "Find Ballet Workout clicked, existingLog=${existingLog?.id ?: "NULL"}")
+                        debugLog("HealthConnect", "Find Ballet Workout clicked, existingLog=${existingLog?.id ?: "NULL"}")
                         // 먼저 저장 후 워크아웃 fetch
                         val newLog = ClassLog.create(
                             date = date,

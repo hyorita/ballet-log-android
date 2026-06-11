@@ -4,6 +4,7 @@ import android.app.Application
 import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
+import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.db.BalletLogDatabase
@@ -108,6 +109,35 @@ class PhotoLogViewModel(app: Application) : AndroidViewModel(app) {
 
     fun deleteTag(tag: PhotoLogTag) {
         viewModelScope.launch { dao.deleteTag(tag) }
+    }
+
+    /**
+     * 1.9: scan Health Connect for ballet workouts in `[startMillis, endMillis)`.
+     * Returns raw sessions (no dedupe) on the main thread — the History screen
+     * filters out ones already in the log to show "unlogged" rows/banner.
+     */
+    fun scanWorkouts(
+        startMillis: Long,
+        endMillis: Long,
+        onResult: (List<HealthConnectManager.ScannedWorkout>) -> Unit
+    ) {
+        viewModelScope.launch {
+            val context = getApplication<Application>()
+            val records = if (HealthConnectManager.hasPermissions(context))
+                HealthConnectManager.scanWorkouts(context, startMillis, endMillis)
+            else emptyList()
+            withContext(Dispatchers.Main) { onResult(records) }
+        }
+    }
+
+    /**
+     * 1.9: import the given Health Connect sessions as placeholder PhotoLogs via
+     * the shared dedupe path. New rows surface through the existing Flow.
+     */
+    fun importWorkouts(records: List<HealthConnectManager.ScannedWorkout>) {
+        viewModelScope.launch {
+            HealthConnectAutoImport.importWorkouts(dao, records)
+        }
     }
 
     fun fetchWorkoutForDate(dateMillis: Long, onResult: (WorkoutInfo?) -> Unit) {

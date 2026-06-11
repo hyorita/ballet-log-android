@@ -16,6 +16,11 @@ interface PhotoLogDao {
     @Query("SELECT * FROM photo_logs WHERE externalWorkoutId = :externalId LIMIT 1")
     suspend fun findByExternalWorkoutId(externalId: String): PhotoLog?
 
+    /** All workout identities already imported as PhotoLogs — the dedupe set
+     *  shared by the auto-import, History, and backfill paths (1.9). */
+    @Query("SELECT externalWorkoutId FROM photo_logs WHERE externalWorkoutId IS NOT NULL")
+    suspend fun getAllExternalWorkoutIds(): List<String>
+
     @Query("SELECT * FROM photo_logs WHERE isFavorite = 1 ORDER BY date DESC")
     fun getFavorites(): Flow<List<PhotoLog>>
 

@@ -125,7 +125,16 @@ fun NotesScreen(
                             selectedTag = selectedTag,
                             showAll = showAllTags,
                             onTagTap = { tag ->
-                                selectedTag = if (selectedTag == tag) null else tag
+                                // iOS parity: tapping a tag fills the search field with
+                                // the tag name and collapses the chip row to the selected
+                                // chip; tapping the same tag again clears it.
+                                if (selectedTag == tag) {
+                                    selectedTag = null
+                                    searchQuery = ""
+                                } else {
+                                    selectedTag = tag
+                                    searchQuery = tag
+                                }
                             },
                             onTagLongPress = { tag -> tagToDelete = tag },
                             onToggleShowAll = { showAllTags = !showAllTags }

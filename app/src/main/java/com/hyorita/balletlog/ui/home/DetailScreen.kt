@@ -1,6 +1,10 @@
 package com.hyorita.balletlog.ui.home
 
+import android.content.Intent
+import android.net.Uri
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.clickable
+import com.hyorita.balletlog.ui.common.youTubeVideoId
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
@@ -40,6 +44,7 @@ import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.WorkoutCard
 import com.hyorita.balletlog.ui.common.findActivity
 import com.hyorita.balletlog.ui.common.shareLogCard
+import com.hyorita.balletlog.util.debugLog
 import java.text.SimpleDateFormat
 import java.util.*
 
@@ -90,14 +95,7 @@ fun DetailScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = onToggleFavorite) {
-                        Icon(
-                            imageVector = if (log.favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
-                            contentDescription = "Favorite",
-                            tint = if (log.favorite) Color(0xFFE91E63)
-                                   else MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+                    // iOS order: Share, Favorite, Edit, Delete
                     if (isSharing) {
                         Box(
                             modifier = Modifier.size(48.dp),
@@ -115,7 +113,7 @@ fun DetailScreen(
                                 try {
                                     shareLogCard(context, log, tabIndex)
                                 } catch (e: Exception) {
-                                    android.util.Log.e("ShareLog", "Share failed: ${e.message}", e)
+                                    debugLog("ShareLog", "Share failed: ${e.message}", e)
                                 } finally {
                                     context.findActivity().runOnUiThread {
                                         isSharing = false
@@ -126,6 +124,14 @@ fun DetailScreen(
                             Icon(Icons.Default.Share, contentDescription = "Share",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant)
                         }
+                    }
+                    IconButton(onClick = onToggleFavorite) {
+                        Icon(
+                            imageVector = if (log.favorite) Icons.Filled.Favorite else Icons.Outlined.FavoriteBorder,
+                            contentDescription = "Favorite",
+                            tint = if (log.favorite) Color(0xFFE91E63)
+                                   else MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                     IconButton(onClick = onEdit) {
                         Icon(Icons.Default.Edit, contentDescription = "Edit")
@@ -294,13 +300,21 @@ fun DetailScreen(
                 }
             }
 
-            // YouTube Music 카드 (있을 때만)
+            // YouTube Music 카드 (있을 때만) — tap opens the link (iOS parity)
             if (currentMusic.isNotEmpty()) {
                 item {
+                    val videoId = remember(currentMusic) { youTubeVideoId(currentMusic) }
                     Card(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .padding(horizontal = 16.dp),
+                            .padding(horizontal = 16.dp)
+                            .clickable {
+                                runCatching {
+                                    context.startActivity(
+                                        Intent(Intent.ACTION_VIEW, Uri.parse(currentMusic))
+                                    )
+                                }.onFailure { debugLog("Music", "open link failed", it) }
+                            },
                         shape = RoundedCornerShape(16.dp),
                         elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                         colors = CardDefaults.cardColors(
@@ -311,14 +325,26 @@ fun DetailScreen(
                             modifier = Modifier.padding(14.dp),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
-                            Box(
-                                modifier = Modifier
-                                    .size(40.dp)
-                                    .clip(RoundedCornerShape(8.dp))
-                                    .background(MaterialTheme.colorScheme.surfaceContainerHigh),
-                                contentAlignment = Alignment.Center
-                            ) {
-                                Text("♩", fontSize = 18.sp)
+                            if (videoId != null) {
+                                AsyncImage(
+                                    model = "https://img.youtube.com/vi/$videoId/mqdefault.jpg",
+                                    contentDescription = null,
+                                    contentScale = ContentScale.Crop,
+                                    modifier = Modifier
+                                        .size(width = 60.dp, height = 42.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(Color.Black)
+                                )
+                            } else {
+                                Box(
+                                    modifier = Modifier
+                                        .size(40.dp)
+                                        .clip(RoundedCornerShape(8.dp))
+                                        .background(MaterialTheme.colorScheme.surfaceContainerHigh),
+                                    contentAlignment = Alignment.Center
+                                ) {
+                                    Text("♩", fontSize = 18.sp)
+                                }
                             }
                             Spacer(Modifier.width(12.dp))
                             Column(modifier = Modifier.weight(1f)) {

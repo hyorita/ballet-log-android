@@ -22,21 +22,51 @@ data class StatsAggregates(
     val totalClasses: Int = 0,
     val totalMinutes: Int = 0,
     val totalCalories: Int = 0,
-    val hardestClass: ClassLog? = null,
+    // 1.9: hardest workout (was "hardest class") — held as plain values since
+    // the source may be a ClassLog workout or an imported PhotoLog placeholder.
+    val hardestCalories: Int? = null,
+    val hardestDate: Long? = null,
+    // The ClassLog behind the hardest workout, if it was a class (not a
+    // placeholder) — lets the Stats card navigate to its detail.
+    val hardestLog: ClassLog? = null,
     val topViewed: List<ClassLog> = emptyList(),
     val cubeData: List<Int> = emptyList(),
     val cubeLabels: List<String> = emptyList(),
+    // Per-period workout-time chart values (WEEK: min/day, MONTH: avg min/week).
+    val timeData: List<Int> = emptyList(),
     val monthlyClassCounts: List<Int> = emptyList(),
     val monthlyAvgMinutes: List<Int> = emptyList()
 )
 
+/**
+ * 1.9: one counted activity in the stats window. Built from both ClassLogs and
+ * workout-bearing PhotoLog placeholders, then deduped by [externalWorkoutId] so
+ * the same Health Connect session logged twice counts once. `isClassLog` lets a
+ * ClassLog win the identity tie (it's the richer record).
+ */
+private data class StatItem(
+    val date: Long,
+    val durationMinutes: Int,
+    val activeCalories: Int,
+    val externalWorkoutId: String?,
+    val classLog: ClassLog?
+)
+
 class StatsViewModel(app: Application) : AndroidViewModel(app) {
-    private val dao = BalletLogDatabase.getInstance(app).classLogDao()
+    private val db = BalletLogDatabase.getInstance(app)
+    private val dao = db.classLogDao()
+    private val photoDao = db.photoLogDao()
 
     val selectedPeriod = MutableStateFlow(StatsPeriod.WEEK)
     val periodOffset = MutableStateFlow(0)
 
     private val allLogs = dao.getAll().stateIn(
+        scope = viewModelScope,
+        started = SharingStarted.WhileSubscribed(5000),
+        initialValue = emptyList()
+    )
+
+    private val allPhotoLogs = photoDao.getAll().stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
@@ -50,10 +80,38 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             .sortedByDescending { it.date }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
+    // Deduped counted activities (ClassLog workouts + imported placeholders).
+    private val filteredItems: StateFlow<List<StatItem>> = combine(
+        allLogs, allPhotoLogs, selectedPeriod, periodOffset
+    ) { logs, photos, period, offset ->
+        val (start, end) = computeRange(period, offset)
+        val classItems = logs.filter { it.date in start until end }.map { log ->
+            StatItem(
+                date = log.date,
+                durationMinutes = log.workout?.durationMinutes ?: 0,
+                activeCalories = log.workout?.activeCalories ?: 0,
+                externalWorkoutId = log.workout?.externalWorkoutId,
+                classLog = log
+            )
+        }
+        val photoItems = photos
+            .filter { it.date in start until end && it.hasWorkoutData }
+            .map { p ->
+                StatItem(
+                    date = p.date,
+                    durationMinutes = p.durationMin ?: 0,
+                    activeCalories = p.kcal ?: 0,
+                    externalWorkoutId = p.externalWorkoutId,
+                    classLog = null
+                )
+            }
+        dedupeByIdentity(classItems + photoItems)
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val aggregates: StateFlow<StatsAggregates> = combine(
-        filteredLogs, selectedPeriod
-    ) { logs, period ->
-        computeAggregates(logs, period)
+        filteredItems, filteredLogs, selectedPeriod
+    ) { items, logs, period ->
+        computeAggregates(items, logs, period)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsAggregates())
 
     val periodLabel: StateFlow<String> = combine(selectedPeriod, periodOffset) { p, o ->
@@ -75,6 +133,29 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
 
     fun nextPeriod() {
         if (periodOffset.value < 0) periodOffset.value += 1
+    }
+
+    /**
+     * 1.9: open stats anchored to a specific month (the one being viewed in
+     * History), mirroring iOS's referenceDate. Clamped to not point at a future
+     * month.
+     */
+    fun showMonth(year: Int, month: Int) {
+        val now = Calendar.getInstance()
+        val offset = (year - now.get(Calendar.YEAR)) * 12 + (month - now.get(Calendar.MONTH))
+        selectedPeriod.value = StatsPeriod.MONTH
+        periodOffset.value = offset.coerceAtMost(0)
+    }
+
+    private fun dedupeByIdentity(items: List<StatItem>): List<StatItem> {
+        val seen = HashSet<String>()
+        val out = ArrayList<StatItem>(items.size)
+        // ClassLog items first so they win an externalId tie over a placeholder.
+        items.sortedByDescending { it.classLog != null }.forEach { item ->
+            val id = item.externalWorkoutId
+            if (id == null || seen.add(id)) out.add(item)
+        }
+        return out
     }
 
     private fun computeRange(period: StatsPeriod, offset: Int): Pair<Long, Long> {
@@ -124,42 +205,86 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun computeAggregates(logs: List<ClassLog>, period: StatsPeriod): StatsAggregates {
-        val workouts = logs.mapNotNull { it.workout }
-        val totalMinutes = workouts.sumOf { it.durationMinutes }
-        val totalCalories = workouts.sumOf { it.activeCalories }
-        val hardest = logs.filter { it.workout != null }
-            .maxByOrNull { it.workout?.activeCalories ?: 0 }
-        val topViewed = logs.filter { it.viewCount > 0 }
+    private fun computeAggregates(
+        items: List<StatItem>,
+        classLogs: List<ClassLog>,
+        period: StatsPeriod
+    ): StatsAggregates {
+        val totalMinutes = items.sumOf { it.durationMinutes }
+        val totalCalories = items.sumOf { it.activeCalories }
+        val hardest = items.filter { it.activeCalories > 0 }.maxByOrNull { it.activeCalories }
+        // Top viewed stays ClassLog-only — placeholders have no view count.
+        val topViewed = classLogs.filter { it.viewCount > 0 }
             .sortedByDescending { it.viewCount }
             .take(5)
 
-        val (cubeData, cubeLabels) = buildCubeData(logs, period)
-        val monthlyClassCounts = if (period == StatsPeriod.YEAR) buildMonthlyCounts(logs) else emptyList()
-        val monthlyAvgMinutes = if (period == StatsPeriod.YEAR) buildMonthlyAvgMinutes(logs) else emptyList()
+        val (cubeData, cubeLabels) = buildCubeData(items, period)
+        val timeData = if (period == StatsPeriod.YEAR) emptyList() else buildTimeData(items, period)
+        val monthlyClassCounts = if (period == StatsPeriod.YEAR) buildMonthlyCounts(items) else emptyList()
+        val monthlyAvgMinutes = if (period == StatsPeriod.YEAR) buildMonthlyAvgMinutes(items) else emptyList()
 
         return StatsAggregates(
-            totalClasses = logs.size,
+            totalClasses = items.size,
             totalMinutes = totalMinutes,
             totalCalories = totalCalories,
-            hardestClass = hardest,
+            hardestCalories = hardest?.activeCalories,
+            hardestDate = hardest?.date,
+            hardestLog = hardest?.classLog,
             topViewed = topViewed,
             cubeData = cubeData,
             cubeLabels = cubeLabels,
+            timeData = timeData,
             monthlyClassCounts = monthlyClassCounts,
             monthlyAvgMinutes = monthlyAvgMinutes
         )
     }
 
+    /**
+     * 1.9: workout-time chart values for WEEK (total minutes per weekday) and
+     * MONTH (average minutes per week-of-month). YEAR uses monthlyAvgMinutes.
+     */
+    private fun buildTimeData(items: List<StatItem>, period: StatsPeriod): List<Int> {
+        return when (period) {
+            StatsPeriod.WEEK -> {
+                val sums = IntArray(7)
+                items.forEach { item ->
+                    if (item.durationMinutes > 0) {
+                        val cal = Calendar.getInstance().also { it.timeInMillis = item.date }
+                        sums[cal.get(Calendar.DAY_OF_WEEK) - 1] += item.durationMinutes
+                    }
+                }
+                sums.toList()
+            }
+            StatsPeriod.MONTH -> {
+                val sum = IntArray(5)
+                val count = IntArray(5)
+                items.forEach { item ->
+                    if (item.durationMinutes > 0) {
+                        val cal = Calendar.getInstance().apply {
+                            timeInMillis = item.date
+                            firstDayOfWeek = Calendar.SUNDAY
+                            minimalDaysInFirstWeek = 1
+                        }
+                        val w = (cal.get(Calendar.WEEK_OF_MONTH) - 1).coerceIn(0, 4)
+                        sum[w] += item.durationMinutes
+                        count[w]++
+                    }
+                }
+                (0 until 5).map { if (count[it] > 0) sum[it] / count[it] else 0 }
+            }
+            StatsPeriod.YEAR -> emptyList()
+        }
+    }
+
     private fun buildCubeData(
-        logs: List<ClassLog>,
+        items: List<StatItem>,
         period: StatsPeriod
     ): Pair<List<Int>, List<String>> {
         return when (period) {
             StatsPeriod.WEEK -> {
                 val counts = IntArray(7)
-                logs.forEach { log ->
-                    val cal = Calendar.getInstance().also { it.timeInMillis = log.date }
+                items.forEach { item ->
+                    val cal = Calendar.getInstance().also { it.timeInMillis = item.date }
                     val dow = cal.get(Calendar.DAY_OF_WEEK) - 1 // 0=Sun
                     counts[dow]++
                 }
@@ -167,9 +292,9 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             }
             StatsPeriod.MONTH -> {
                 val counts = IntArray(5)
-                logs.forEach { log ->
+                items.forEach { item ->
                     val cal = Calendar.getInstance().apply {
-                        timeInMillis = log.date
+                        timeInMillis = item.date
                         firstDayOfWeek = Calendar.SUNDAY
                         minimalDaysInFirstWeek = 1
                     }
@@ -180,8 +305,8 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             }
             StatsPeriod.YEAR -> {
                 val counts = IntArray(12)
-                logs.forEach { log ->
-                    val cal = Calendar.getInstance().also { it.timeInMillis = log.date }
+                items.forEach { item ->
+                    val cal = Calendar.getInstance().also { it.timeInMillis = item.date }
                     counts[cal.get(Calendar.MONTH)]++
                 }
                 counts.toList() to listOf("J", "F", "M", "A", "M", "J", "J", "A", "S", "O", "N", "D")
@@ -189,23 +314,23 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
-    private fun buildMonthlyCounts(logs: List<ClassLog>): List<Int> {
+    private fun buildMonthlyCounts(items: List<StatItem>): List<Int> {
         val counts = IntArray(12)
-        logs.forEach {
+        items.forEach {
             val cal = Calendar.getInstance().also { c -> c.timeInMillis = it.date }
             counts[cal.get(Calendar.MONTH)]++
         }
         return counts.toList()
     }
 
-    private fun buildMonthlyAvgMinutes(logs: List<ClassLog>): List<Int> {
+    private fun buildMonthlyAvgMinutes(items: List<StatItem>): List<Int> {
         val sum = IntArray(12)
         val count = IntArray(12)
-        logs.forEach { log ->
-            log.workout?.let { w ->
-                val cal = Calendar.getInstance().also { c -> c.timeInMillis = log.date }
+        items.forEach { item ->
+            if (item.durationMinutes > 0) {
+                val cal = Calendar.getInstance().also { c -> c.timeInMillis = item.date }
                 val m = cal.get(Calendar.MONTH)
-                sum[m] += w.durationMinutes
+                sum[m] += item.durationMinutes
                 count[m]++
             }
         }
