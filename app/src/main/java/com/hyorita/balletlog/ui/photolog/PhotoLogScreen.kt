@@ -222,9 +222,15 @@ private fun PhotoLogGrid(
     val collageGroups = remember(groups) {
         var offset = 0
         groups.map { g ->
-            val rows = buildCollageRows(g.logs, indexOffset = offset)
-            offset += g.logs.size
-            CollageGroup(g.key, g.label, rows)
+            // 1.10: photos flow in the collage; workout-only placeholders are
+            // pulled out into a tidy strip band at the bottom of each month so
+            // they don't compete with photos. A placeholder that gains a photo
+            // is no longer workout-only, so it rejoins the collage automatically.
+            val photos = g.logs.filter { !it.isWorkoutOnly }
+            val placeholders = g.logs.filter { it.isWorkoutOnly }
+            val rows = buildCollageRows(photos, indexOffset = offset)
+            offset += photos.size
+            CollageGroup(g.key, g.label, rows, placeholders)
         }
     }
 
@@ -246,6 +252,11 @@ private fun PhotoLogGrid(
             group.rows.forEach { row ->
                 item(key = row.rowKey) {
                     CollageRowView(row = row, onTap = onTap)
+                }
+            }
+            group.placeholders.forEach { ph ->
+                item(key = "strip_${ph.id}") {
+                    WorkoutStripCard(log = ph, onTap = { onTap(ph) })
                 }
             }
         }
@@ -309,11 +320,8 @@ private fun GridThumb(
     onTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    if (log.isWorkoutOnly) {
-        WorkoutGridThumb(log = log, onTap = onTap, modifier = modifier)
-        return
-    }
-
+    // Collage cells are photos only — workout-only placeholders render as
+    // strips in the per-month band, never here (1.10).
     val context = LocalContext.current
     val displayName = log.filteredPhotoPath ?: log.photoPath
     val photoFile = remember(displayName) { PhotoLogStorage.fileFor(context, displayName) }
@@ -392,80 +400,104 @@ private fun GridThumb(
 }
 
 /**
- * 1.8: workout-only grid card. Mirrors iOS layout — light/off-white surface,
- * date top-left, large kcal right-of-center, sub-stats bottom-left.
+ * 1.10: workout-only strip. Compact full-width row shown grouped in a tidy
+ * band at the bottom of each month — separate from the photo collage so the
+ * stats don't compete with photos. Mirrors iOS WorkoutStripCard: calendar-style
+ * date block (weekday over day) on the left, right-aligned kcal · min · bpm.
+ * Once a photo is added the log is no longer workout-only and rejoins the collage.
  */
 @Composable
-private fun WorkoutGridThumb(
+private fun WorkoutStripCard(
     log: PhotoLog,
     onTap: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    val shortDate = remember(log.date) {
-        SimpleDateFormat("MMM d", Locale.getDefault()).format(Date(log.date))
+    val weekday = remember(log.date) {
+        SimpleDateFormat("EEE", Locale.getDefault()).format(Date(log.date)).uppercase(Locale.getDefault())
     }
-    val subText = buildString {
+    val day = remember(log.date) {
+        SimpleDateFormat("dd", Locale.getDefault()).format(Date(log.date))
+    }
+    val subStats = buildString {
         log.durationMin?.let { append("$it min") }
         log.avgBPM?.let {
             if (isNotEmpty()) append(" · ")
             append("$it bpm")
         }
     }
-    Box(
+    Row(
         modifier = modifier
+            .fillMaxWidth()
             // Unify with the Class editor input cards (surfaceContainerHigh) —
             // also makes the placeholder adapt to the theme instead of a fixed grey.
             .background(MaterialTheme.colorScheme.surfaceContainerHigh)
             .clickable(onClick = onTap)
-            .padding(horizontal = 14.dp, vertical = 12.dp)
+            .padding(horizontal = 16.dp, vertical = 14.dp),
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.spacedBy(20.dp)
     ) {
+        // Calendar-style date block — weekday over day (the month is in the
+        // section header above, so it's omitted here).
+        Column(
+            modifier = Modifier.width(38.dp),
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.spacedBy(1.dp)
+        ) {
+            Text(
+                weekday,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                day,
+                color = MaterialTheme.colorScheme.onSurface,
+                style = MaterialTheme.typography.titleMedium
+            )
+        }
+
         if (log.isFavorite) {
             Icon(
                 Icons.Default.Favorite,
                 contentDescription = null,
                 tint = Color(0xFFE91E63),
-                modifier = Modifier
-                    .align(Alignment.TopEnd)
-                    .size(14.dp)
+                modifier = Modifier.size(14.dp)
             )
         }
-        Text(
-            shortDate,
-            color = MaterialTheme.colorScheme.onSurface,
-            fontSize = 14.sp,
-            fontWeight = FontWeight.SemiBold,
-            modifier = Modifier.align(Alignment.TopStart)
-        )
-        val kcal = log.kcal
-        if (kcal != null && kcal > 0) {
-            Row(
-                verticalAlignment = Alignment.Bottom,
-                modifier = Modifier
-                    .align(Alignment.CenterEnd)
-                    .padding(end = 4.dp)
-            ) {
+
+        Spacer(Modifier.weight(1f))
+
+        Row(verticalAlignment = Alignment.Bottom) {
+            val kcal = log.kcal
+            if (kcal != null && kcal > 0) {
                 Text(
                     "$kcal",
                     color = MaterialTheme.colorScheme.onSurface,
-                    fontSize = 44.sp,
-                    fontWeight = FontWeight.Light,
-                    lineHeight = 44.sp
+                    style = MaterialTheme.typography.titleMedium
                 )
                 Text(
                     "kcal",
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
-                    fontSize = 13.sp,
-                    modifier = Modifier.padding(bottom = 10.dp, start = 2.dp)
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(start = 2.dp, bottom = 1.dp)
                 )
             }
-        }
-        if (subText.isNotEmpty()) {
-            Text(
-                subText,
-                color = MaterialTheme.colorScheme.onSurfaceVariant,
-                fontSize = 11.sp,
-                modifier = Modifier.align(Alignment.BottomStart)
-            )
+            if (subStats.isNotEmpty()) {
+                if (kcal != null && kcal > 0) {
+                    Text(
+                        " · ",
+                        color = MaterialTheme.colorScheme.outline,
+                        fontSize = 12.sp,
+                        modifier = Modifier.padding(bottom = 1.dp)
+                    )
+                }
+                Text(
+                    subStats,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    fontSize = 12.sp,
+                    modifier = Modifier.padding(bottom = 1.dp)
+                )
+            }
         }
     }
 }
@@ -534,7 +566,8 @@ private sealed class CollageRow {
 private data class CollageGroup(
     val key: String,
     val label: String,
-    val rows: List<CollageRow>
+    val rows: List<CollageRow>,          // photo cards only — the collage
+    val placeholders: List<PhotoLog>     // workout-only — tidy strip band (bottom)
 )
 
 /** Cheap deterministic hash so the same index yields the same pattern. */
@@ -565,14 +598,7 @@ private fun buildCollageRows(logs: List<PhotoLog>, indexOffset: Int): List<Colla
         val remaining = logs.size - i
         when {
             bucket == 0 || bucket == 1 || remaining == 1 -> {
-                // Workout-only cards have no photo content to fill the space,
-                // so a tall Full row reads as a giant empty rectangle. Use a
-                // compact height regardless of the heightBucket pattern.
-                val fullHeight = when {
-                    logs[i].isWorkoutOnly -> base * 0.9f
-                    heightBucket <= 1 -> base * 1.6f
-                    else -> base
-                }
+                val fullHeight = if (heightBucket <= 1) base * 1.6f else base
                 rows.add(CollageRow.Full(logs[i], fullHeight))
                 i += 1
             }
