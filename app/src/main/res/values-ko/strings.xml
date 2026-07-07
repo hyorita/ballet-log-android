@@ -31,6 +31,9 @@
     <string name="photolog_tag_delete_title">태그를 삭제할까요?</string>
     <string name="photolog_share">공유</string>
     <string name="history_photo_logs">로그</string>
+    <!-- Collapsed month-header summary (1.11) -->
+    <string name="log_month_photos">사진 %1$d장</string>
+    <string name="log_month_workouts">운동 %1$d개</string>
 
     <!-- Settings -->
     <string name="settings_profile">프로필</string>

@@ -31,6 +31,9 @@
     <string name="photolog_tag_delete_title">Delete tag?</string>
     <string name="photolog_share">Share</string>
     <string name="history_photo_logs">Logs</string>
+    <!-- Collapsed month-header summary (1.11) -->
+    <string name="log_month_photos">%1$d photos</string>
+    <string name="log_month_workouts">%1$d workouts</string>
 
     <!-- Settings -->
     <string name="settings_profile">Profile</string>
