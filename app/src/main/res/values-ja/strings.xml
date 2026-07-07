@@ -31,6 +31,9 @@
     <string name="photolog_tag_delete_title">タグを削除しますか？</string>
     <string name="photolog_share">共有</string>
     <string name="history_photo_logs">ログ</string>
+    <!-- Collapsed month-header summary (1.11) -->
+    <string name="log_month_photos">写真%1$d枚</string>
+    <string name="log_month_workouts">ワークアウト%1$d件</string>
 
     <!-- Settings -->
     <string name="settings_profile">プロフィール</string>

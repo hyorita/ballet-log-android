@@ -3,6 +3,7 @@ package com.hyorita.balletlog.ui.photolog
 import androidx.compose.animation.core.LinearEasing
 import androidx.compose.animation.core.RepeatMode
 import androidx.compose.animation.core.animateFloat
+import androidx.compose.animation.core.animateFloatAsState
 import androidx.compose.animation.core.infiniteRepeatable
 import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
@@ -16,6 +17,7 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocalFireDepartment
 import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.*
@@ -23,6 +25,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.draw.rotate
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.layout.ContentScale
@@ -36,6 +39,7 @@ import kotlin.math.abs
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
+import com.hyorita.balletlog.data.CollapsedMonthsPreferences
 import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.TutorialPreferences
 import com.hyorita.balletlog.data.model.PhotoLog
@@ -218,6 +222,7 @@ private fun PhotoLogGrid(
     onTap: (PhotoLog) -> Unit,
     modifier: Modifier = Modifier
 ) {
+    val context = LocalContext.current
     val groups = remember(logs) { groupByMonth(logs) }
     val collageGroups = remember(groups) {
         var offset = 0
@@ -230,8 +235,20 @@ private fun PhotoLogGrid(
             val placeholders = g.logs.filter { it.isWorkoutOnly }
             val rows = buildCollageRows(photos, indexOffset = offset)
             offset += photos.size
-            CollageGroup(g.key, g.label, rows, placeholders)
+            CollageGroup(g.key, g.label, rows, placeholders, photos.size)
         }
+    }
+
+    // 1.11: collapsed month keys, persisted across launches. Default empty →
+    // all expanded (non-destructive). Tapping a month header toggles it.
+    var collapsedMonths by remember {
+        mutableStateOf(CollapsedMonthsPreferences.get(context))
+    }
+    val toggleMonth: (String) -> Unit = { key ->
+        collapsedMonths = collapsedMonths.toMutableSet().apply {
+            if (!add(key)) remove(key)
+        }
+        CollapsedMonthsPreferences.set(context, collapsedMonths)
     }
 
     LazyColumn(
@@ -239,16 +256,15 @@ private fun PhotoLogGrid(
         verticalArrangement = Arrangement.spacedBy(COLLAGE_SPACING)
     ) {
         collageGroups.forEach { group ->
+            val collapsed = group.key in collapsedMonths
             item(key = "header_${group.key}") {
-                Text(
-                    text = group.label,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Medium,
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 16.dp, vertical = 12.dp)
+                MonthHeader(
+                    group = group,
+                    collapsed = collapsed,
+                    onToggle = { toggleMonth(group.key) }
                 )
             }
+            if (collapsed) return@forEach
             group.rows.forEach { row ->
                 item(key = row.rowKey) {
                     CollageRowView(row = row, onTap = onTap)
@@ -262,6 +278,72 @@ private fun PhotoLogGrid(
         }
     }
 }
+
+/**
+ * 1.11: tappable month header. Tap to collapse/expand the month's collage +
+ * strip band. Chevron rotates (down = expanded, right = collapsed); a collapsed
+ * header shows a quick "N photos · M workouts" summary. Mirrors iOS
+ * `monthSeparator`.
+ */
+@Composable
+private fun MonthHeader(
+    group: CollageGroup,
+    collapsed: Boolean,
+    onToggle: () -> Unit
+) {
+    val chevronRotation by animateFloatAsState(
+        targetValue = if (collapsed) -90f else 0f,
+        animationSpec = tween(220),
+        label = "chevronRotation"
+    )
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .clickable(onClick = onToggle)
+            .padding(horizontal = 16.dp, vertical = 12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Text(
+            text = group.label,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Medium
+        )
+        Spacer(Modifier.width(6.dp))
+        Icon(
+            Icons.Default.KeyboardArrowDown,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onSurfaceVariant,
+            modifier = Modifier
+                .size(18.dp)
+                .rotate(chevronRotation)
+        )
+        Spacer(Modifier.weight(1f))
+        if (collapsed) {
+            val summary = buildString {
+                if (group.photoCount > 0) {
+                    append(pluralishPhotos(group.photoCount))
+                }
+                if (group.placeholders.isNotEmpty()) {
+                    if (isNotEmpty()) append(" · ")
+                    append(pluralishWorkouts(group.placeholders.size))
+                }
+            }
+            if (summary.isNotEmpty()) {
+                Text(
+                    summary,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.outline
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun pluralishPhotos(n: Int) = stringResource(R.string.log_month_photos, n)
+
+@Composable
+private fun pluralishWorkouts(n: Int) = stringResource(R.string.log_month_workouts, n)
 
 @Composable
 private fun CollageRowView(row: CollageRow, onTap: (PhotoLog) -> Unit) {
@@ -567,7 +649,8 @@ private data class CollageGroup(
     val key: String,
     val label: String,
     val rows: List<CollageRow>,          // photo cards only — the collage
-    val placeholders: List<PhotoLog>     // workout-only — tidy strip band (bottom)
+    val placeholders: List<PhotoLog>,    // workout-only — tidy strip band (bottom)
+    val photoCount: Int                  // for the collapsed-header summary
 )
 
 /** Cheap deterministic hash so the same index yields the same pattern. */
