@@ -46,41 +46,66 @@ object BackupManager {
 
     suspend fun exportToUri(context: Context, dest: Uri) {
         withContext(Dispatchers.IO) {
-            // Flush WAL into the main DB file so the backup captures the
-            // latest writes (otherwise recent inserts may live only in -wal).
+            val db = BalletLogDatabase.getInstance(context)
+
+            // Best-effort: fold WAL frames into the main file. A FULL checkpoint
+            // can't complete while the running app holds read connections open
+            // (Room's Flow observers), so this alone does NOT guarantee the main
+            // file is self-contained — hence the snapshot below.
             runCatching {
-                val db = BalletLogDatabase.getInstance(context)
                 db.openHelper.writableDatabase.query("PRAGMA wal_checkpoint(FULL)").close()
             }
 
-            val out = context.contentResolver.openOutputStream(dest)
-                ?: throw IOException("Failed to open destination")
+            // Preferred path: VACUUM INTO writes a single, fully self-contained
+            // copy of the database — including committed rows still living only
+            // in the -wal — into one file, without closing the live connection.
+            // This is what keeps a class log added right before export from being
+            // missing from the backup. VACUUM INTO needs SQLite 3.27+ (Android
+            // API 29+); older devices fall back to copying db + wal + shm together
+            // (also loss-free, since restore copies every db file back).
+            val snapshot = File(context.cacheDir, "backup_snapshot_${UUID.randomUUID()}.db")
+            val snapshotOk = runCatching {
+                db.openHelper.writableDatabase.execSQL("VACUUM INTO ?", arrayOf(snapshot.absolutePath))
+                snapshot.exists() && snapshot.length() > 0
+            }.getOrDefault(false)
 
-            ZipOutputStream(out).use { zip ->
-                // Manifest
-                zip.putEntryAndWrite(MANIFEST) {
-                    write(
-                        ("{\"version\":$BACKUP_VERSION," +
-                            "\"timestamp\":${System.currentTimeMillis()}," +
-                            "\"app\":\"balletlog-android\"}").toByteArray()
-                    )
+            try {
+                val out = context.contentResolver.openOutputStream(dest)
+                    ?: throw IOException("Failed to open destination")
+
+                ZipOutputStream(out).use { zip ->
+                    // Manifest
+                    zip.putEntryAndWrite(MANIFEST) {
+                        write(
+                            ("{\"version\":$BACKUP_VERSION," +
+                                "\"timestamp\":${System.currentTimeMillis()}," +
+                                "\"app\":\"balletlog-android\"}").toByteArray()
+                        )
+                    }
+
+                    // Database — a self-contained snapshot when available,
+                    // otherwise the live files (main + -wal + -shm) together.
+                    if (snapshotOk) {
+                        zip.copyFile(snapshot, "db/$DB_NAME")
+                    } else {
+                        val dbFile = context.getDatabasePath(DB_NAME)
+                        dbFile.parentFile?.listFiles()
+                            ?.filter { it.name.startsWith(DB_NAME) }
+                            ?.forEach { file -> zip.copyFile(file, "db/${file.name}") }
+                    }
+
+                    // ClassLog / Note photos
+                    File(context.filesDir, "photos").listFiles()
+                        ?.filter { it.isFile }
+                        ?.forEach { file -> zip.copyFile(file, "photos/${file.name}") }
+
+                    // PhotoLog photos
+                    File(context.filesDir, "photolog").listFiles()
+                        ?.filter { it.isFile }
+                        ?.forEach { file -> zip.copyFile(file, "photolog/${file.name}") }
                 }
-
-                // Database files (main + -wal + -shm)
-                val dbFile = context.getDatabasePath(DB_NAME)
-                dbFile.parentFile?.listFiles()
-                    ?.filter { it.name.startsWith(DB_NAME) }
-                    ?.forEach { file -> zip.copyFile(file, "db/${file.name}") }
-
-                // ClassLog / Note photos
-                File(context.filesDir, "photos").listFiles()
-                    ?.filter { it.isFile }
-                    ?.forEach { file -> zip.copyFile(file, "photos/${file.name}") }
-
-                // PhotoLog photos
-                File(context.filesDir, "photolog").listFiles()
-                    ?.filter { it.isFile }
-                    ?.forEach { file -> zip.copyFile(file, "photolog/${file.name}") }
+            } finally {
+                snapshot.delete()
             }
         }
     }
