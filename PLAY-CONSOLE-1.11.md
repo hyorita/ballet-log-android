@@ -19,6 +19,7 @@ iOS 1.11 동기화. Log 탭 월 접기.
 ```
 ✨ 1.11
 • 월 접기 — Log 탭에서 월 헤더를 탭하면 그 달을 접을 수 있어요. 접힌 달은 간단한 요약(사진 · 운동)을 보여주고, 다음에 앱을 열어도 접힌 상태가 유지돼서 긴 기록을 훑어보기 편합니다.
+• 백업 안정성 개선 — 내보내기가 언제나 최신 항목까지 완결된 하나의 파일로 담기도록 개선했어요.
 ```
 
 ### English
@@ -26,6 +27,7 @@ iOS 1.11 동기화. Log 탭 월 접기.
 ```
 ✨ 1.11
 • Collapse months — Tap a month header in the Log tab to fold it away. Collapsed months show a quick summary (photos · workouts) and stay collapsed next time you open the app, so a long history is easy to skim.
+• Sturdier backups — Export now always captures your latest entries into one self-contained file.
 ```
 
 ### 日本語
@@ -33,6 +35,7 @@ iOS 1.11 동기화. Log 탭 월 접기.
 ```
 ✨ 1.11
 • 月を折りたたむ — Log タブで月のヘッダーをタップすると、その月を折りたためます。折りたたんだ月は簡単な概要（写真・ワークアウト）を表示し、次にアプリを開いても折りたたんだ状態が保たれます。
+• バックアップの安定性向上 — 書き出しが常に最新の項目まで、一つの完結したファイルに収まるようになりました。
 ```
 
 ---
@@ -44,7 +47,7 @@ iOS 1.11은 3개 항목(월 접기 / 백업 파일 열어 복원 / export 전 WA
 | iOS 항목 | Android 대응 |
 |---|---|
 | **월 접기** (`d0362f7`) | ✅ 포팅. `PhotoLogScreen.kt` 월 헤더를 탭 가능하게 — chevron 회전 + 접힘 시 "사진 N장 · 운동 M개" 요약. 접힌 달은 콜라주·strip 렌더 스킵. `CollapsedMonthsPreferences`(SharedPreferences, "yyyy-MM" 콤마 조인)로 영속화, 기본 전부 펼침(비파괴적). `CollageGroup.photoCount` 추가, `log_month_photos`/`log_month_workouts` 문자열(en/ko/ja). |
-| **export 전 WAL checkpoint** (`606dc86`) | ✅ 이미 반영됨. Android `BackupManager.exportToUri`는 export 직전 `PRAGMA wal_checkpoint(FULL)` 수행 (1.x 초기 구현부터). 추가 작업 없음. |
+| **export 전 WAL checkpoint** (`606dc86`) | ✅ 반영 + 하드닝. 기존엔 export 직전 `PRAGMA wal_checkpoint(FULL)` + main/wal/shm 동봉이었음. 실증 테스트 결과: 앱 실행 중 Room Flow 리더가 열려 있어 FULL checkpoint가 완료 못 됨 → 방금 추가한 ClassLog가 main 파일엔 없고 `-wal`에만 존재. 손실은 없었으나(사이드카 동봉+복원) main이 self-contained하지 않았음(iOS 버그 원인과 동일 구조). **수정**: `exportToUri`가 `VACUUM INTO`로 완결된 단일 스냅샷을 떠서 백업(연결 안 닫음 → 비파괴적). `VACUUM INTO` 미지원(SQLite<3.27, API<29) 기기는 기존 방식으로 폴백. 커밋 `7732099`. |
 | **백업 파일 열어 복원** (`1468c58`) | ⏸️ 이번엔 생략(사용자 결정). Android는 커스텀 `.bblbackup` 확장자 연결이 불안정(content:// URI는 확장자 미노출 → octet-stream/zip 광범위 매칭 필요)해 부작용 대비 가치 낮음. 복원은 설정→데이터 가져오기로 계속 가능. 향후 필요 시 범위 제한 intent-filter로 추가 검토. |
 
 **Room 스키마 변경 없음(version 6 유지) → 백업 양방향 안전.**
