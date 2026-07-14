@@ -66,6 +66,20 @@ class PhotoLogViewModel(app: Application) : AndroidViewModel(app) {
         }
     }
 
+    /**
+     * 1.12: after replacing a Photo Log's picture, delete the files the old
+     * photo left behind. `keep` guards the just-saved new original so we never
+     * remove the file the row now points at.
+     */
+    fun deleteOrphanPhotos(vararg names: String?, keep: String? = null) {
+        viewModelScope.launch(Dispatchers.IO) {
+            names.filterNotNull()
+                .filter { it.isNotBlank() && it != keep }
+                .distinct()
+                .forEach { PhotoLogStorage.delete(getApplication(), it) }
+        }
+    }
+
     fun delete(log: PhotoLog) {
         viewModelScope.launch {
             dao.delete(log)

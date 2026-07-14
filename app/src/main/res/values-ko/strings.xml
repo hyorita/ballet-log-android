@@ -34,6 +34,9 @@
     <!-- Collapsed month-header summary (1.11) -->
     <string name="log_month_photos">사진 %1$d장</string>
     <string name="log_month_workouts">운동 %1$d개</string>
+    <!-- 1.12: Log grid tag filter + photo replace -->
+    <string name="log_clear_filters">필터 지우기</string>
+    <string name="photolog_change_photo">사진 바꾸기</string>
 
     <!-- Settings -->
     <string name="settings_profile">프로필</string>

@@ -30,6 +30,7 @@ import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material.icons.filled.MonitorHeart
 import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.TextFormat
 import androidx.compose.material.icons.filled.Tonality
@@ -124,6 +125,11 @@ fun PhotoLogEditScreen(
     var isComposingText by remember { mutableStateOf(false) }
     var activeMeta by remember { mutableStateOf<MetaField?>(null) }
     var isSaving by remember { mutableStateOf(false) }
+    // 1.12: edit mode only — set when the user swaps in a different photo, so
+    // save clears the stale filtered copy and removes the orphaned old files.
+    // (Every pick lands in a fresh UUID file, so photoName already points at
+    // the new original — no in-place-overwrite dance like iOS needs.)
+    var didReplacePhoto by remember { mutableStateOf(false) }
 
     // Match ClassLog editor's picker contract so the same OS picker UI
     // shows up across both editors (avoids OEM routing inconsistencies).
@@ -139,7 +145,13 @@ fun PhotoLogEditScreen(
         }
         uri?.let {
             vm.savePhotoFromUri(it) { saved, takenDate ->
-                if (saved != null) photoName = saved
+                if (saved != null) {
+                    photoName = saved
+                    // Editing an existing log → mark this a replacement. Keep the
+                    // log's current date so it doesn't jump in the grid/history;
+                    // only a brand-new log adopts the picture's capture date.
+                    if (existing != null) didReplacePhoto = true
+                }
                 if (takenDate != null && existing == null) date = takenDate
             }
         }
@@ -195,6 +207,20 @@ fun PhotoLogEditScreen(
                 contentDescription = stringResource(R.string.cancel),
                 onClick = onDismiss
             )
+            // 1.12: swap the picture while editing — reopens the same gallery
+            // picker. Edit mode only (a new log gets its photo on open).
+            if (existing != null) {
+                Spacer(Modifier.width(10.dp))
+                CircleIconButton(
+                    icon = Icons.Default.PhotoLibrary,
+                    contentDescription = stringResource(R.string.photolog_change_photo),
+                    onClick = {
+                        photoPicker.launch(
+                            PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)
+                        )
+                    }
+                )
+            }
             Spacer(Modifier.weight(1f))
             CircleIconButton(
                 icon = if (isFavorite) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
@@ -218,6 +244,10 @@ fun PhotoLogEditScreen(
                     val log = if (existing != null) {
                         existing.copy(
                             photoPath = name,
+                            // Replacing the photo invalidates any filtered copy —
+                            // reset to the new unfiltered original.
+                            filteredPhotoPath = if (didReplacePhoto) null else existing.filteredPhotoPath,
+                            filterName = if (didReplacePhoto) "Original" else existing.filterName,
                             caption = caption,
                             captionX = captionOffsetXDp.toDouble(),
                             captionY = captionOffsetYDp.toDouble(),
@@ -249,6 +279,15 @@ fun PhotoLogEditScreen(
                         )
                     }
                     vm.upsert(log, isNew = existing == null)
+                    // Clean up the files the replaced photo left behind (skip the
+                    // new original, which we just kept).
+                    if (existing != null && didReplacePhoto) {
+                        vm.deleteOrphanPhotos(
+                            existing.photoPath,
+                            existing.filteredPhotoPath,
+                            keep = name
+                        )
+                    }
                     onDismiss()
                 }
             )
