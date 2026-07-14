@@ -9,13 +9,16 @@ import androidx.compose.animation.core.rememberInfiniteTransition
 import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CameraAlt
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.KeyboardArrowDown
 import androidx.compose.material.icons.filled.LocalFireDepartment
@@ -223,7 +226,26 @@ private fun PhotoLogGrid(
     modifier: Modifier = Modifier
 ) {
     val context = LocalContext.current
-    val groups = remember(logs) { groupByMonth(logs) }
+
+    // 1.12: tag filter. Empty selection = show everything; multiple tags are
+    // ANDed (a log must carry every selected tag). Workout-only placeholders
+    // have no tags, so any active filter naturally drops them.
+    var selectedTags by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val allTags = remember(logs) {
+        logs.flatMap { it.tags }.filter { it.isNotBlank() }.distinct().sorted()
+    }
+    // Prune selections that no longer exist (a log's last use of a tag was edited
+    // away) so a stale filter can't strand the grid on an empty result.
+    LaunchedEffect(allTags) {
+        val pruned = selectedTags.filterTo(mutableSetOf()) { it in allTags }
+        if (pruned != selectedTags) selectedTags = pruned
+    }
+    val filteredLogs = remember(logs, selectedTags) {
+        if (selectedTags.isEmpty()) logs
+        else logs.filter { it.tags.toSet().containsAll(selectedTags) }
+    }
+
+    val groups = remember(filteredLogs) { groupByMonth(filteredLogs) }
     val collageGroups = remember(groups) {
         var offset = 0
         groups.map { g ->
@@ -255,6 +277,37 @@ private fun PhotoLogGrid(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(COLLAGE_SPACING)
     ) {
+        if (allTags.isNotEmpty()) {
+            item(key = "tag_filter") {
+                TagFilterRow(
+                    allTags = allTags,
+                    selectedTags = selectedTags,
+                    onToggle = { tag ->
+                        selectedTags = selectedTags.toMutableSet().apply {
+                            if (!add(tag)) remove(tag)
+                        }
+                    },
+                    onClear = { selectedTags = emptySet() }
+                )
+            }
+        }
+        if (selectedTags.isNotEmpty() && collageGroups.isEmpty()) {
+            item(key = "no_results") {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .padding(vertical = 40.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        stringResource(R.string.no_results),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+            return@LazyColumn
+        }
         collageGroups.forEach { group ->
             val collapsed = group.key in collapsedMonths
             item(key = "header_${group.key}") {
@@ -344,6 +397,65 @@ private fun pluralishPhotos(n: Int) = stringResource(R.string.log_month_photos, 
 
 @Composable
 private fun pluralishWorkouts(n: Int) = stringResource(R.string.log_month_workouts, n)
+
+/**
+ * 1.12: horizontal chip row above the collage for narrowing the grid by a
+ * studio / level / teacher tag. Compact single row (photos stay the focus);
+ * tapping a chip toggles it, selected chips are ANDed. A leading clear chip
+ * appears once anything is selected. Selection shows as a filled capsule alone
+ * (no checkmark). Mirrors iOS `tagFilterRow`.
+ */
+@Composable
+private fun TagFilterRow(
+    allTags: List<String>,
+    selectedTags: Set<String>,
+    onToggle: (String) -> Unit,
+    onClear: () -> Unit
+) {
+    Row(
+        modifier = Modifier
+            .fillMaxWidth()
+            .horizontalScroll(rememberScrollState())
+            .padding(horizontal = 16.dp, vertical = 4.dp),
+        horizontalArrangement = Arrangement.spacedBy(8.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        if (selectedTags.isNotEmpty()) {
+            Surface(
+                shape = CircleShape,
+                color = MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.clickable(onClick = onClear)
+            ) {
+                Icon(
+                    Icons.Default.Close,
+                    contentDescription = stringResource(R.string.log_clear_filters),
+                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .padding(horizontal = 10.dp, vertical = 7.dp)
+                        .size(14.dp)
+                )
+            }
+        }
+        allTags.forEach { tag ->
+            val selected = tag in selectedTags
+            Surface(
+                shape = CircleShape,
+                color = if (selected) MaterialTheme.colorScheme.primary
+                else MaterialTheme.colorScheme.surfaceVariant,
+                modifier = Modifier.clickable { onToggle(tag) }
+            ) {
+                Text(
+                    tag,
+                    color = if (selected) MaterialTheme.colorScheme.onPrimary
+                    else MaterialTheme.colorScheme.onSurface,
+                    style = MaterialTheme.typography.labelLarge,
+                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
+                )
+            }
+        }
+    }
+}
 
 @Composable
 private fun CollageRowView(row: CollageRow, onTap: (PhotoLog) -> Unit) {

@@ -34,6 +34,9 @@
     <!-- Collapsed month-header summary (1.11) -->
     <string name="log_month_photos">%1$d photos</string>
     <string name="log_month_workouts">%1$d workouts</string>
+    <!-- 1.12: Log grid tag filter + photo replace -->
+    <string name="log_clear_filters">Clear filters</string>
+    <string name="photolog_change_photo">Change Photo</string>
 
     <!-- Settings -->
     <string name="settings_profile">Profile</string>

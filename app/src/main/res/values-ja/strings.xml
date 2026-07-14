@@ -34,6 +34,9 @@
     <!-- Collapsed month-header summary (1.11) -->
     <string name="log_month_photos">写真%1$d枚</string>
     <string name="log_month_workouts">ワークアウト%1$d件</string>
+    <!-- 1.12: Log grid tag filter + photo replace -->
+    <string name="log_clear_filters">フィルターをクリア</string>
+    <string name="photolog_change_photo">写真を変更</string>
 
     <!-- Settings -->
     <string name="settings_profile">プロフィール</string>
