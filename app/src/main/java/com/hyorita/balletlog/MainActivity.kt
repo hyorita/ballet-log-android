@@ -17,6 +17,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.SportsGymnastics
+import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Note
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
@@ -29,6 +30,8 @@ import androidx.lifecycle.LifecycleEventObserver
 import androidx.lifecycle.lifecycleScope
 import androidx.compose.ui.platform.LocalContext
 import com.hyorita.balletlog.data.BackfillPreferences
+import com.hyorita.balletlog.data.CatalogRepository
+import com.hyorita.balletlog.data.MusicPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.db.BalletLogDatabase
@@ -45,6 +48,7 @@ import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
 import com.hyorita.balletlog.ui.history.HistoryScreen
 import com.hyorita.balletlog.ui.home.ClassScreen
+import com.hyorita.balletlog.ui.music.MusicScreen
 import com.hyorita.balletlog.ui.notes.NotesScreen
 import com.hyorita.balletlog.ui.photolog.PhotoLogScreen
 import com.hyorita.balletlog.ui.theme.BalletLogTheme
@@ -54,6 +58,8 @@ sealed class Screen(val route: String, val label: String, val icon: ImageVector,
     object Class : Screen("class", "Class", Icons.Default.SportsGymnastics, R.string.nav_class)
     object Notes : Screen("notes", "Notes", Icons.Default.Note, R.string.nav_notes)
     object History : Screen("history", "History", Icons.Default.CalendarMonth, R.string.nav_history)
+    // 1.13: last, matching iOS. The four personal-record tabs stay together.
+    object Music : Screen("music", "Music", Icons.Default.MusicNote, R.string.nav_music)
 }
 
 class MainActivity : ComponentActivity() {
@@ -117,8 +123,34 @@ val LocalBottomBarVisible = compositionLocalOf { mutableStateOf(true) }
 @Composable
 fun BalletLogApp() {
     val navController = rememberNavController()
-    val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.History)
+    val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.History, Screen.Music)
     val bottomBarVisible = remember { mutableStateOf(true) }
+
+    // 1.13 Music badge. Loaded here rather than in MusicScreen: a tab's content
+    // isn't composed until it's selected, so waiting would mean the badge never
+    // appears until the user visits the very tab it exists to advertise.
+    // Cheap — a bundled or cached file read, then a background refresh.
+    val context = LocalContext.current
+    val catalog by CatalogRepository.catalog.collectAsState()
+    var lastSeenRelease by remember { mutableStateOf(MusicPreferences.lastSeenRelease(context)) }
+    LaunchedEffect(Unit) {
+        CatalogRepository.load(context)
+        // First run: don't greet a new user with a badge for the whole back
+        // catalog. Only releases published after this point count.
+        if (lastSeenRelease.isEmpty()) {
+            val newest = CatalogRepository.newestReleaseDate
+            MusicPreferences.setLastSeenRelease(context, newest)
+            lastSeenRelease = newest
+        }
+    }
+    val newReleases = remember(catalog, lastSeenRelease) {
+        CatalogRepository.newReleaseCount(lastSeenRelease)
+    }
+    val markMusicSeen = {
+        val newest = CatalogRepository.newestReleaseDate
+        MusicPreferences.setLastSeenRelease(context, newest)
+        lastSeenRelease = newest
+    }
 
     androidx.compose.runtime.CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {
     Scaffold(
@@ -140,10 +172,26 @@ fun BalletLogApp() {
 
                 tabs.forEach { screen ->
                     NavigationBarItem(
-                        icon = { Icon(screen.icon, contentDescription = stringResource(screen.labelRes)) },
+                        icon = {
+                            if (screen == Screen.Music && newReleases > 0) {
+                                BadgedBox(badge = { Badge { Text("$newReleases") } }) {
+                                    Icon(
+                                        screen.icon,
+                                        contentDescription = stringResource(screen.labelRes)
+                                    )
+                                }
+                            } else {
+                                Icon(
+                                    screen.icon,
+                                    contentDescription = stringResource(screen.labelRes)
+                                )
+                            }
+                        },
                         label = { Text(stringResource(screen.labelRes)) },
                         selected = currentDestination?.hierarchy?.any { it.route == screen.route } == true,
                         onClick = {
+                            // Opening the tab clears the badge.
+                            if (screen == Screen.Music) markMusicSeen()
                             navController.navigate(screen.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -173,6 +221,7 @@ fun BalletLogApp() {
             composable(Screen.Class.route) { ClassScreen() }
             composable(Screen.Notes.route) { NotesScreen() }
             composable(Screen.History.route) { HistoryScreen() }
+            composable(Screen.Music.route) { MusicScreen() }
         }
     }
     }

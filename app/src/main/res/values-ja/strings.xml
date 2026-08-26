@@ -217,4 +217,35 @@
     <string name="stats_chart_time_year">月平均運動時間（分）</string>
     <string name="stats_empty_title">レッスンなし</string>
     <string name="stats_empty_subtitle">レッスン記録で統計表示</string>
+
+    <!-- 1.13 Music tab (iOS 1.13 sync) -->
+    <string name="nav_music">音楽</string>
+    <string name="music_header">バレエクラスの音楽</string>
+    <string name="music_discovery">今日の発見</string>
+    <string name="music_new_releases">新着アルバム</string>
+    <string name="music_saved">保存済み</string>
+    <string name="music_saved_state">保存済み</string>
+    <string name="music_save">保存</string>
+    <string name="music_accompanists">伴奏者</string>
+    <string name="music_albums">アルバム</string>
+    <string name="music_show_all">すべて表示</string>
+    <string name="music_show_all_albums">アルバム%1$d枚をすべて表示</string>
+    <string name="music_album_count">アルバム%1$d枚</string>
+    <string name="music_track_count">%1$d曲</string>
+    <string name="music_try_searching">こんな探し方</string>
+    <string name="music_unavailable">オンラインになると音楽が表示されます。</string>
+    <string name="music_open_apple">Apple Musicで開く</string>
+    <string name="music_open_youtube">YouTube Musicで開く</string>
+    <string name="music_preview_notice">30秒のプレビューです。フル再生はApple MusicかYouTube Musicで。</string>
+    <string name="music_tracks_unavailable">トラック一覧を取得できません。</string>
+    <string name="music_play_preview">プレビュー再生</string>
+    <string name="music_stop_preview">プレビュー停止</string>
+    <string name="music_suggest_france">フランス</string>
+    <string name="music_suggest_italy">イタリア</string>
+    <string name="music_suggest_vaganova">ワガノワ</string>
+    <string name="music_suggest_pop">ポップ</string>
+    <string name="music_suggest_jazz">ジャズ</string>
+    <string name="music_suggest_disney">ディズニー</string>
+    <string name="music_suggest_chopin">ショパン</string>
+    <string name="music_suggest_improvised">即興演奏</string>
 </resources>
