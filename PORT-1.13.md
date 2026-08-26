@@ -153,7 +153,7 @@ val q = Uri.encode("${artist.name} ${album.title}")
 - [x] EN/KO/JA 문자열
 - [x] 단위 테스트 (`MusicCatalogTest` — 시드 파싱, FNV-1a 일치, 오늘의 발견 규칙,
       아트워크 사다리, 로케일 폴백)
-- [ ] PLAY-CONSOLE-1.13.md
+- [x] PLAY-CONSOLE-1.13.md
 
 ### 실기기 확인 (2026-08-16, SM-S9xx / Android 15)
 
