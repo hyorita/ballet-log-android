@@ -9,6 +9,8 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.ExperimentalLayoutApi
 import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.WindowInsets
+import androidx.compose.foundation.layout.isImeVisible
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
@@ -49,7 +51,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.focus.onFocusChanged
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.platform.LocalSoftwareKeyboardController
@@ -75,6 +76,7 @@ import java.util.Locale
  * degrades quietly: no network and no cache means the sections just don't
  * appear. Never show an error — the rest of the app is unaffected.
  */
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MusicScreen() {
     val context = LocalContext.current
@@ -92,6 +94,18 @@ fun MusicScreen() {
     var openedAlbum by remember { mutableStateOf<CatalogAlbum?>(null) }
 
     LaunchedEffect(Unit) { CatalogRepository.load(context) }
+
+    // An empty focused field shows the suggestion chips instead of the sections,
+    // so focus has to end when the keyboard does. Without this, dismissing the
+    // keyboard (or clearing the query) strands the tab on the chips with no way
+    // back to Today's discovery short of typing something. iOS gets this free
+    // from scrollDismissesKeyboard.
+    val focusManager = LocalFocusManager.current
+    val keyboard = LocalSoftwareKeyboardController.current
+    val imeVisible = WindowInsets.isImeVisible
+    LaunchedEffect(imeVisible) {
+        if (!imeVisible) focusManager.clearFocus()
+    }
 
     val query = searchQuery.trim().lowercase()
     val isSearching = query.isNotEmpty()
@@ -264,8 +278,6 @@ fun MusicScreen() {
     // matching how Notes and Log present their detail views.
     val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
     val anyModalActive = openedArtist != null || openedAlbum != null
-    val keyboard = LocalSoftwareKeyboardController.current
-    val focusManager = LocalFocusManager.current
     DisposableEffect(anyModalActive) {
         if (anyModalActive) {
             bottomBarVisible.value = false

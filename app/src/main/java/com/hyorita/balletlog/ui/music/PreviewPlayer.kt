@@ -42,21 +42,26 @@ object PreviewPlayer {
         val token = generation
 
         runCatching {
-            MediaPlayer().apply {
-                setAudioAttributes(
-                    AudioAttributes.Builder()
-                        .setUsage(AudioAttributes.USAGE_MEDIA)
-                        .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
-                        .build()
-                )
-                setDataSource(url)
-                setOnPreparedListener { if (token == generation) it.start() else it.release() }
-                setOnCompletionListener { stop() }
-                setOnErrorListener { _, _, _ -> stop(); true }
-                prepareAsync()
-                player = this
-                playingId = id
+            // Deliberately not MediaPlayer().apply { ... }: inside that receiver
+            // scope a bare stop() binds to MediaPlayer.stop(), which halts the
+            // audio but never clears playingId — the row keeps showing a pause
+            // icon over silence. Explicit calls keep the two stops apart.
+            val mediaPlayer = MediaPlayer()
+            mediaPlayer.setAudioAttributes(
+                AudioAttributes.Builder()
+                    .setUsage(AudioAttributes.USAGE_MEDIA)
+                    .setContentType(AudioAttributes.CONTENT_TYPE_MUSIC)
+                    .build()
+            )
+            mediaPlayer.setDataSource(url)
+            mediaPlayer.setOnPreparedListener {
+                if (token == generation) it.start() else it.release()
             }
+            mediaPlayer.setOnCompletionListener { this@PreviewPlayer.stop() }
+            mediaPlayer.setOnErrorListener { _, _, _ -> this@PreviewPlayer.stop(); true }
+            mediaPlayer.prepareAsync()
+            player = mediaPlayer
+            playingId = id
         }.onFailure {
             debugLog("PreviewPlayer", "playback failed for $url", it)
             stop()
