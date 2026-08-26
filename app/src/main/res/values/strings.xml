@@ -217,4 +217,34 @@
     <string name="stats_chart_time_year">Avg workout time per month (min)</string>
     <string name="stats_empty_title">No classes yet</string>
     <string name="stats_empty_subtitle">Start logging classes to see your stats here.</string>
+
+    <!-- 1.13 Music tab (iOS 1.13 sync) -->
+    <string name="nav_music">Music</string>
+    <string name="music_header">Ballet Class Music</string>
+    <string name="music_discovery">Today\'s discovery</string>
+    <string name="music_new_releases">New releases</string>
+    <string name="music_saved">Saved</string>
+    <string name="music_save">Save</string>
+    <string name="music_accompanists">Accompanists</string>
+    <string name="music_albums">Albums</string>
+    <string name="music_show_all">Show all</string>
+    <string name="music_show_all_albums">Show all %1$d albums</string>
+    <string name="music_album_count">%1$d albums</string>
+    <string name="music_track_count">%1$d tracks</string>
+    <string name="music_try_searching">Try searching for</string>
+    <string name="music_unavailable">Music will appear here once you\'re online.</string>
+    <string name="music_open_apple">Open in Apple Music</string>
+    <string name="music_open_youtube">Open in YouTube Music</string>
+    <string name="music_preview_notice">30-second previews. Full tracks play in Apple Music or YouTube Music.</string>
+    <string name="music_tracks_unavailable">Track list unavailable.</string>
+    <string name="music_play_preview">Play preview</string>
+    <string name="music_stop_preview">Stop preview</string>
+    <string name="music_suggest_france">France</string>
+    <string name="music_suggest_italy">Italy</string>
+    <string name="music_suggest_vaganova">Vaganova</string>
+    <string name="music_suggest_pop">Pop</string>
+    <string name="music_suggest_jazz">Jazz</string>
+    <string name="music_suggest_disney">Disney</string>
+    <string name="music_suggest_chopin">Chopin</string>
+    <string name="music_suggest_improvised">Improvised</string>
 </resources>

@@ -27,14 +27,15 @@ artists 61 / albums 780 (tier 1 = 32명). 앨범 상세도 200 응답 정상.
 (iOS 번들 시드와 바이트 동일). 로딩 순서는 **캐시 → 번들 시드 → 원격 갱신**,
 원격 `catalogVersion`이 더 크면 캐시 교체.
 
-## 옮길 파일
+## 옮긴 파일
 
-| iOS | 안드로이드 (제안) |
+| iOS | 안드로이드 |
 |---|---|
 | `Models/MusicCatalog.swift` (161줄) | `data/model/MusicCatalog.kt` — Gson 데이터 클래스 |
-| `Services/CatalogService.swift` (162줄) | `data/catalog/CatalogRepository.kt` |
-| `Services/AlbumFavorites.swift` (35줄) | `data/catalog/AlbumFavorites.kt` — DataStore |
-| `Services/PreviewPlayer.swift` (62줄) | `ui/music/PreviewPlayer.kt` — Media3 ExoPlayer |
+| `Services/CatalogService.swift` (162줄) | `data/CatalogRepository.kt` |
+| `Services/AlbumFavorites.swift` (35줄) | `data/AlbumFavoritesPreferences.kt` |
+| `ContentView.swift`의 배지 상태 | `data/MusicPreferences.kt` + MainActivity |
+| `Services/PreviewPlayer.swift` (62줄) | `ui/music/PreviewPlayer.kt` |
 | `Services/ArtworkLoader.swift` | 불필요 — Coil이 대체 (디스크 캐시가 있어 iOS보다 유리) |
 | `Views/MusicView.swift` (565줄) | `ui/music/MusicScreen.kt` |
 | `Views/ArtistDetailView.swift` (125줄) | `ui/music/ArtistDetailScreen.kt` |
@@ -48,18 +49,20 @@ MusicScreen 섹션 순서 (iOS와 동일): 오늘의 발견 → 새로 나온 �
 뒀다 — "Music" 하나만 두면 음악 앱처럼 읽힌다. Log 탭이 이미 쓰는 분리
 방식(탭 `Log` / 헤더 `Ballet Log`)과 같다.
 
-## 추가할 의존성
+## 의존성 — 하나도 추가하지 않았다
 
-현재 `app/build.gradle.kts`에 없는 것:
+계획 단계에선 Media3 ExoPlayer · DataStore · OkHttp 3종을 예상했는데, 셋 다
+이 기능의 크기에 비해 과했다.
 
-```kotlin
-implementation("androidx.media3:media3-exoplayer:1.4.1")   // 30초 미리듣기 (AAC/MP4)
-implementation("androidx.datastore:datastore-preferences:1.1.1")  // 즐겨찾기
-implementation("com.squareup.okhttp3:okhttp:4.12.0")       // 카탈로그 fetch
-```
+- **미리듣기 → `MediaPlayer`.** 한 번에 한 곡, 큐 없음, 백그라운드 재생 없음,
+  노출할 세션 없음. ExoPlayer가 주는 버퍼링 정책·트랙 선택·미디어 세션이
+  전부 안 쓰이는 자리라 APK만 무거워진다. 30초 AAC/MP4 스트림 하나면 충분
+- **즐겨찾기 → SharedPreferences.** 앱의 다른 설정(`CollapsedMonthsPreferences`
+  등)이 전부 이 방식이라 맞췄다. iOS의 `UserDefaults`와도 같은 층위
+- **카탈로그 fetch → `HttpURLConnection`.** 정적 JSON 2종, 인증 없음,
+  인터셉터 없음
 
-Coil · Gson · Navigation은 이미 있다. OkHttp 대신 `HttpURLConnection`으로
-가도 되는 규모(정적 JSON 2종)라 착수 시 판단.
+Coil · Gson · Navigation은 이미 있던 것을 그대로 썼다.
 
 ## 안드로이드 전용 결정
 
@@ -143,10 +146,26 @@ val q = Uri.encode("${artist.name} ${album.title}")
 - [x] `dev/1.13` 브랜치
 - [x] versionCode 14 / versionName 1.13
 - [x] `app/src/main/assets/catalog.json` 시드 동봉
-- [ ] 의존성 추가
-- [ ] 모델 · 리포지토리 · 즐겨찾기
-- [ ] MusicScreen · ArtistDetail · AlbumDetail
-- [ ] 미리듣기 플레이어
-- [ ] 탭 추가 (5탭)
-- [ ] EN/KO/JA 문자열
+- [x] 모델 · 리포지토리 · 즐겨찾기 · 배지 상태
+- [x] MusicScreen · ArtistDetail · AlbumDetail
+- [x] 미리듣기 플레이어
+- [x] 탭 추가 (5탭, 맨 뒤)
+- [x] EN/KO/JA 문자열
+- [x] 단위 테스트 (`MusicCatalogTest` — 시드 파싱, FNV-1a 일치, 오늘의 발견 규칙,
+      아트워크 사다리, 로케일 폴백)
 - [ ] PLAY-CONSOLE-1.13.md
+
+### 실기기 확인 (2026-08-16, SM-S9xx / Android 15)
+
+확인됨: 탭 5개 · 오늘의 발견(파이썬 대조 결과와 동일한 앨범) · 새로 나온 앨범 ·
+반주자 목록 · 앨범 상세(아트워크 · `2026 · 33곡` · 저장/Apple/유튜브뮤직 ·
+30초 안내 · 동작 칩 + 박자 + 원곡 길이) · **30초 미리듣기 재생** ·
+검색 제안 칩 · 한국어 칩 → 영어 쿼리 검색 · 반주자 상세 · 반주자→앨범 2단 이동 ·
+배지 최초 실행 초기화(`musicLastSeenRelease=2026-09-04`).
+
+고친 것: 검색 결과에서 상세를 열면 키보드가 그 위에 남아 있었다 →
+오버레이가 열릴 때 포커스 해제 + IME 숨김.
+
+미확인: **하트 저장 → 보관함 섹션**(탭하려던 순간 화면이 잠겨 기기가 끊김).
+배지가 실제로 그려지는 모습도 아직 못 봤다 — 최초 실행에서 0으로 초기화되는 게
+정상 동작이라, 카탈로그가 갱신되어야 보인다.

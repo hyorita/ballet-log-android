@@ -217,4 +217,34 @@
     <string name="stats_chart_time_year">월간 평균 운동 시간 (분)</string>
     <string name="stats_empty_title">아직 수업 기록이 없어요</string>
     <string name="stats_empty_subtitle">수업을 기록하면 여기서 통계를 볼 수 있어요.</string>
+
+    <!-- 1.13 Music tab (iOS 1.13 sync) -->
+    <string name="nav_music">음악</string>
+    <string name="music_header">발레 클래스 음악</string>
+    <string name="music_discovery">오늘의 발견</string>
+    <string name="music_new_releases">새로 나온 앨범</string>
+    <string name="music_saved">보관함</string>
+    <string name="music_save">저장하기</string>
+    <string name="music_accompanists">반주자</string>
+    <string name="music_albums">앨범</string>
+    <string name="music_show_all">전체 보기</string>
+    <string name="music_show_all_albums">앨범 %1$d장 모두 보기</string>
+    <string name="music_album_count">앨범 %1$d장</string>
+    <string name="music_track_count">%1$d곡</string>
+    <string name="music_try_searching">이렇게 찾아보세요</string>
+    <string name="music_unavailable">온라인이 되면 음악이 표시됩니다.</string>
+    <string name="music_open_apple">Apple Music에서 열기</string>
+    <string name="music_open_youtube">유튜브뮤직에서 열기</string>
+    <string name="music_preview_notice">30초 미리듣기입니다. 전체 듣기는 Apple Music 또는 유튜브뮤직에서.</string>
+    <string name="music_tracks_unavailable">트랙 목록을 불러올 수 없습니다.</string>
+    <string name="music_play_preview">미리듣기 재생</string>
+    <string name="music_stop_preview">미리듣기 정지</string>
+    <string name="music_suggest_france">프랑스</string>
+    <string name="music_suggest_italy">이탈리아</string>
+    <string name="music_suggest_vaganova">바가노바</string>
+    <string name="music_suggest_pop">팝</string>
+    <string name="music_suggest_jazz">재즈</string>
+    <string name="music_suggest_disney">디즈니</string>
+    <string name="music_suggest_chopin">쇼팽</string>
+    <string name="music_suggest_improvised">즉흥 연주</string>
 </resources>
