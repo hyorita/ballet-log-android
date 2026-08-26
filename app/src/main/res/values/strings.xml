@@ -224,6 +224,7 @@
     <string name="music_discovery">Today\'s discovery</string>
     <string name="music_new_releases">New releases</string>
     <string name="music_saved">Saved</string>
+    <string name="music_saved_state">Saved</string>
     <string name="music_save">Save</string>
     <string name="music_accompanists">Accompanists</string>
     <string name="music_albums">Albums</string>

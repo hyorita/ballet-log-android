@@ -224,6 +224,7 @@
     <string name="music_discovery">今日の発見</string>
     <string name="music_new_releases">新着アルバム</string>
     <string name="music_saved">保存済み</string>
+    <string name="music_saved_state">保存済み</string>
     <string name="music_save">保存</string>
     <string name="music_accompanists">伴奏者</string>
     <string name="music_albums">アルバム</string>

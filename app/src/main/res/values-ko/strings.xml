@@ -224,6 +224,7 @@
     <string name="music_discovery">오늘의 발견</string>
     <string name="music_new_releases">새로 나온 앨범</string>
     <string name="music_saved">보관함</string>
+    <string name="music_saved_state">저장됨</string>
     <string name="music_save">저장하기</string>
     <string name="music_accompanists">반주자</string>
     <string name="music_albums">앨범</string>

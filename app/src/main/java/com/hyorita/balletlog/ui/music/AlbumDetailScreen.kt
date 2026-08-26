@@ -172,9 +172,13 @@ fun AlbumDetailScreen(
                                 else MaterialTheme.colorScheme.onSurfaceVariant,
                                 modifier = Modifier.size(20.dp)
                             )
+                            // Separate from the section heading: Korean names the
+                            // shelf (보관함) and the state (저장됨) differently,
+                            // where English reuses "Saved" for both.
                             Text(
                                 stringResource(
-                                    if (isFavorite) R.string.music_saved else R.string.music_save
+                                    if (isFavorite) R.string.music_saved_state
+                                    else R.string.music_save
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 color = MaterialTheme.colorScheme.onSurfaceVariant
