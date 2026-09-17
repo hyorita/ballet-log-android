@@ -230,6 +230,9 @@
     <string name="music_albums">アルバム</string>
     <string name="music_show_all">すべて表示</string>
     <string name="music_show_all_albums">アルバム%1$d枚をすべて表示</string>
+    <string name="music_remove_saved_title">保存済みから削除しますか？</string>
+    <string name="music_remove_saved_message">このアルバムが保存済みから削除されます。</string>
+    <string name="music_remove">削除</string>
     <string name="music_album_count">アルバム%1$d枚</string>
     <string name="music_track_count">%1$d曲</string>
     <string name="music_try_searching">こんな探し方</string>

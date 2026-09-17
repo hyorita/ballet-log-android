@@ -55,7 +55,11 @@ data class CatalogAlbum(
     val appleUrl: String = "",
     val level: List<String> = emptyList(),
     val part: List<String> = emptyList(),
-    val themes: List<String> = emptyList()
+    val themes: List<String> = emptyList(),
+    /** catalogVersion this album first appeared in. Drives the release badge — see [CatalogRepository.newReleaseCount]. */
+    val addedIn: Int? = null,
+    /** Manual escape hatch from Today's discovery, independent of [themes]. */
+    val excludeFromDiscovery: Boolean? = null
 ) {
     val year: String get() = releaseDate.take(4)
 

@@ -102,12 +102,19 @@ class MainActivity : ComponentActivity() {
         // 1.8: scan recent Health Connect workouts on foreground and insert
         // any new placeholders into Photo Log. Silent — the new rows just
         // appear in the grid via the existing Flow.
+        //
+        // 1.14: also refresh the Music catalog here — this is the same
+        // "app came back to foreground" moment iOS's scenePhase == .active
+        // fires on. CatalogRepository.load() self-throttles the actual network
+        // hit to once/hour, so it's cheap to call on every foreground.
         val now = System.currentTimeMillis()
         if (now - lastAutoImportAt < 60_000L) return
         lastAutoImportAt = now
         lifecycleScope.launch {
             runCatching { HealthConnectAutoImport.importRecent(this@MainActivity) }
                 .onFailure { debugLog("HealthConnect", "auto-import failed", it) }
+            runCatching { CatalogRepository.load(this@MainActivity) }
+                .onFailure { debugLog("Catalog", "foreground refresh failed", it) }
         }
     }
 }
@@ -132,24 +139,28 @@ fun BalletLogApp() {
     // Cheap — a bundled or cached file read, then a background refresh.
     val context = LocalContext.current
     val catalog by CatalogRepository.catalog.collectAsState()
-    var lastSeenRelease by remember { mutableStateOf(MusicPreferences.lastSeenRelease(context)) }
+    var lastSeenVersion by remember { mutableStateOf(MusicPreferences.lastSeenVersion(context)) }
     LaunchedEffect(Unit) {
         CatalogRepository.load(context)
         // First run: don't greet a new user with a badge for the whole back
         // catalog. Only releases published after this point count.
-        if (lastSeenRelease.isEmpty()) {
-            val newest = CatalogRepository.newestReleaseDate
-            MusicPreferences.setLastSeenRelease(context, newest)
-            lastSeenRelease = newest
+        if (lastSeenVersion == 0) {
+            val version = CatalogRepository.catalogVersion
+            if (version > 0) {
+                MusicPreferences.setLastSeenVersion(context, version)
+                lastSeenVersion = version
+            }
         }
     }
-    val newReleases = remember(catalog, lastSeenRelease) {
-        CatalogRepository.newReleaseCount(lastSeenRelease)
+    val newReleases = remember(catalog, lastSeenVersion) {
+        CatalogRepository.newReleaseCount(lastSeenVersion)
     }
     val markMusicSeen = {
-        val newest = CatalogRepository.newestReleaseDate
-        MusicPreferences.setLastSeenRelease(context, newest)
-        lastSeenRelease = newest
+        val version = CatalogRepository.catalogVersion
+        if (version > 0) {
+            MusicPreferences.setLastSeenVersion(context, version)
+            lastSeenVersion = version
+        }
     }
 
     androidx.compose.runtime.CompositionLocalProvider(LocalBottomBarVisible provides bottomBarVisible) {

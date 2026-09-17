@@ -230,6 +230,9 @@
     <string name="music_albums">Albums</string>
     <string name="music_show_all">Show all</string>
     <string name="music_show_all_albums">Show all %1$d albums</string>
+    <string name="music_remove_saved_title">Remove from Saved?</string>
+    <string name="music_remove_saved_message">This album will be removed from your saved albums.</string>
+    <string name="music_remove">Remove</string>
     <string name="music_album_count">%1$d albums</string>
     <string name="music_track_count">%1$d tracks</string>
     <string name="music_try_searching">Try searching for</string>

@@ -1,8 +1,10 @@
 package com.hyorita.balletlog.ui.music
 
 import androidx.activity.compose.BackHandler
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -30,6 +32,7 @@ import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.MusicNote
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -37,6 +40,7 @@ import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.LaunchedEffect
@@ -76,7 +80,10 @@ import java.util.Locale
  * degrades quietly: no network and no cache means the sections just don't
  * appear. Never show an error — the rest of the app is unaffected.
  */
-@OptIn(ExperimentalLayoutApi::class)
+/** Rail always caps at this many, even when "Show all" isn't showing yet. */
+private const val SAVED_RAIL_LIMIT = 8
+
+@OptIn(ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun MusicScreen() {
     val context = LocalContext.current
@@ -92,6 +99,12 @@ fun MusicScreen() {
     // NavigationPath without pulling a nested NavHost into a single tab.
     var openedArtist by remember { mutableStateOf<CatalogArtist?>(null) }
     var openedAlbum by remember { mutableStateOf<CatalogAlbum?>(null) }
+    var showSavedAlbums by remember { mutableStateOf(false) }
+
+    // Shared by the rail's and the grid's long-press — whichever surface set it,
+    // the confirmation lives here so removal doesn't need its own dialog per view.
+    var albumToUnsave by remember { mutableStateOf<CatalogAlbum?>(null) }
+    val unsave: (CatalogAlbum) -> Unit = { albumToUnsave = it }
 
     LaunchedEffect(Unit) { CatalogRepository.load(context) }
 
@@ -236,10 +249,11 @@ fun MusicScreen() {
 
             if (favoriteAlbums.isNotEmpty()) {
                 item {
-                    AlbumStrip(
-                        title = stringResource(R.string.music_saved),
+                    SavedSection(
                         albums = favoriteAlbums,
-                        onClick = { openedAlbum = it }
+                        onClick = { openedAlbum = it },
+                        onLongClick = unsave,
+                        onShowAll = { showSavedAlbums = true }
                     )
                 }
             }
@@ -277,7 +291,7 @@ fun MusicScreen() {
     // Hide the root NavigationBar while a detail overlay covers the screen,
     // matching how Notes and Log present their detail views.
     val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
-    val anyModalActive = openedArtist != null || openedAlbum != null
+    val anyModalActive = openedArtist != null || openedAlbum != null || showSavedAlbums
     DisposableEffect(anyModalActive) {
         if (anyModalActive) {
             bottomBarVisible.value = false
@@ -319,6 +333,39 @@ fun MusicScreen() {
                 onDismiss = { openedAlbum = null }
             )
         }
+    }
+
+    if (showSavedAlbums) {
+        BackHandler { showSavedAlbums = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            SavedAlbumsScreen(
+                albums = favoriteAlbums,
+                onClick = { openedAlbum = it },
+                onLongClick = unsave,
+                onDismiss = { showSavedAlbums = false }
+            )
+        }
+    }
+
+    albumToUnsave?.let { album ->
+        AlertDialog(
+            onDismissRequest = { albumToUnsave = null },
+            title = { Text(stringResource(R.string.music_remove_saved_title)) },
+            text = { Text(stringResource(R.string.music_remove_saved_message)) },
+            confirmButton = {
+                TextButton(onClick = {
+                    favorites = AlbumFavoritesPreferences.toggle(context, album.id)
+                    albumToUnsave = null
+                }) {
+                    Text(stringResource(R.string.music_remove), color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { albumToUnsave = null }) {
+                    Text(stringResource(R.string.cancel))
+                }
+            }
+        )
     }
 }
 
@@ -402,7 +449,8 @@ private fun DiscoveryCard(
 private fun AlbumStrip(
     title: String,
     albums: List<CatalogAlbum>,
-    onClick: (CatalogAlbum) -> Unit
+    onClick: (CatalogAlbum) -> Unit,
+    onLongClick: ((CatalogAlbum) -> Unit)? = null
 ) {
     Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
         SectionLabel(title)
@@ -414,7 +462,67 @@ private fun AlbumStrip(
                 AlbumTile(
                     album = album,
                     artist = CatalogRepository.artist(album.artistId),
-                    onClick = { onClick(album) }
+                    onClick = { onClick(album) },
+                    onLongClick = onLongClick?.let { { it(album) } }
+                )
+            }
+        }
+    }
+}
+
+/**
+ * Saved rail plus its header: a count next to the label, and a "Show all" link
+ * once there's more than the rail can comfortably hold. The rail itself never
+ * shows more than [SAVED_RAIL_LIMIT], whether or not "Show all" is visible.
+ */
+@Composable
+private fun SavedSection(
+    albums: List<CatalogAlbum>,
+    onClick: (CatalogAlbum) -> Unit,
+    onLongClick: (CatalogAlbum) -> Unit,
+    onShowAll: () -> Unit
+) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        Row(
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(horizontal = 16.dp)
+        ) {
+            Text(
+                stringResource(R.string.music_saved),
+                style = MaterialTheme.typography.bodyMedium,
+                fontWeight = FontWeight.Medium,
+                color = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Text(
+                "${albums.size}",
+                style = MaterialTheme.typography.bodyMedium,
+                color = MaterialTheme.colorScheme.outline
+            )
+            if (albums.size > SAVED_RAIL_LIMIT) {
+                Text(
+                    stringResource(R.string.music_show_all),
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier
+                        .weight(1f)
+                        .clickable(onClick = onShowAll),
+                    textAlign = TextAlign.End
+                )
+            }
+        }
+        LazyRow(
+            contentPadding = PaddingValues(horizontal = 16.dp),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
+        ) {
+            items(albums.take(SAVED_RAIL_LIMIT), key = { it.id }) { album ->
+                AlbumTile(
+                    album = album,
+                    artist = CatalogRepository.artist(album.artistId),
+                    onClick = { onClick(album) },
+                    onLongClick = { onLongClick(album) }
                 )
             }
         }
@@ -518,13 +626,24 @@ fun AlbumArtwork(album: CatalogAlbum, size: Dp, corner: Dp = 10.dp) {
     )
 }
 
+@OptIn(ExperimentalFoundationApi::class)
 @Composable
-private fun AlbumTile(album: CatalogAlbum, artist: CatalogArtist?, onClick: () -> Unit) {
+private fun AlbumTile(
+    album: CatalogAlbum,
+    artist: CatalogArtist?,
+    onClick: () -> Unit,
+    onLongClick: (() -> Unit)? = null
+) {
+    val tileModifier = if (onLongClick != null) {
+        Modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+    } else {
+        Modifier.clickable(onClick = onClick)
+    }
     Column(
         modifier = Modifier
             .width(124.dp)
             .height(190.dp)
-            .clickable(onClick = onClick),
+            .then(tileModifier),
         verticalArrangement = Arrangement.spacedBy(6.dp)
     ) {
         AlbumArtwork(album, size = 124.dp)

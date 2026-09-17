@@ -3,6 +3,7 @@ package com.hyorita.balletlog
 import com.google.gson.Gson
 import com.hyorita.balletlog.data.CatalogRepository
 import com.hyorita.balletlog.data.model.CatalogAlbum
+import com.hyorita.balletlog.data.model.CatalogArtist
 import com.hyorita.balletlog.data.model.ClassExercise
 import com.hyorita.balletlog.data.model.MusicCatalog
 import com.hyorita.balletlog.data.model.localized
@@ -78,6 +79,62 @@ class MusicCatalogTest {
             // Singles show nothing about how someone plays a class.
             assertTrue(album.trackCount >= 5)
         }
+    }
+
+    @Test
+    fun `seasonal albums only enter the discovery pool in season`() {
+        val christmas = CatalogAlbum(themes = listOf("christmas"))
+        val halloween = CatalogAlbum(themes = listOf("halloween"))
+        val yearRound = CatalogAlbum(themes = listOf("pop"))
+
+        assertTrue(CatalogRepository.isInSeason(christmas, 11))
+        assertTrue(CatalogRepository.isInSeason(christmas, 12))
+        assertTrue(!CatalogRepository.isInSeason(christmas, 6))
+
+        assertTrue(CatalogRepository.isInSeason(halloween, 10))
+        assertTrue(!CatalogRepository.isInSeason(halloween, 9))
+        assertTrue(!CatalogRepository.isInSeason(halloween, 11))
+
+        assertTrue(CatalogRepository.isInSeason(yearRound, 1))
+        assertTrue(CatalogRepository.isInSeason(yearRound, 10))
+    }
+
+    @Test
+    fun `discovery skips albums marked excludeFromDiscovery`() {
+        val artist = CatalogArtist(id = "artist", tier = 1)
+        val excluded = CatalogAlbum(
+            id = "excluded", artistId = "artist", artwork = "x", trackCount = 6,
+            excludeFromDiscovery = true
+        )
+        val eligible = CatalogAlbum(
+            id = "eligible", artistId = "artist", artwork = "x", trackCount = 6
+        )
+        val catalog = MusicCatalog(artists = listOf(artist), albums = listOf(excluded, eligible))
+
+        // A month of picks — one lucky day could pass by chance if the filter
+        // were silently ignored.
+        (1..30).forEach { d ->
+            val pick = CatalogRepository.discoveryFrom(catalog, day("2026-06-%02d".format(d)))
+            assertEquals(eligible, pick)
+        }
+    }
+
+    @Test
+    fun `new release count only counts albums added after the last seen version`() {
+        val catalog = MusicCatalog(
+            catalogVersion = 12,
+            albums = listOf(
+                CatalogAlbum(id = "a", addedIn = 10),
+                CatalogAlbum(id = "b", addedIn = 11),
+                CatalogAlbum(id = "c", addedIn = 12),
+                CatalogAlbum(id = "d", addedIn = null)
+            )
+        )
+        assertEquals(2, CatalogRepository.newReleaseCountFrom(catalog, sinceVersion = 10))
+        assertEquals(0, CatalogRepository.newReleaseCountFrom(catalog, sinceVersion = 12))
+        // sinceVersion 0 means "never seen a badge" (first-run guard) — not a count of everything.
+        assertEquals(0, CatalogRepository.newReleaseCountFrom(catalog, sinceVersion = 0))
+        assertEquals(0, CatalogRepository.newReleaseCountFrom(null, sinceVersion = 10))
     }
 
     @Test
