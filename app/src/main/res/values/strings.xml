@@ -103,6 +103,7 @@
     <string name="edit_class">Edit Class</string>
     <string name="save">Save</string>
     <string name="date">Date</string>
+    <string name="class_tags_label">Tags</string>
     <string name="barre">Barre</string>
     <string name="center">Center</string>
     <string name="photos">Photos</string>

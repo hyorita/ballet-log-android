@@ -103,6 +103,7 @@
     <string name="edit_class">편집하기</string>
     <string name="save">저장하기</string>
     <string name="date">날짜</string>
+    <string name="class_tags_label">태그</string>
     <string name="barre">바</string>
     <string name="center">센터</string>
     <string name="photos">사진</string>

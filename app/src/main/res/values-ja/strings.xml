@@ -103,6 +103,7 @@
     <string name="edit_class">レッスンを編集</string>
     <string name="save">保存</string>
     <string name="date">日付</string>
+    <string name="class_tags_label">タグ</string>
     <string name="barre">バー</string>
     <string name="center">センター</string>
     <string name="photos">写真</string>

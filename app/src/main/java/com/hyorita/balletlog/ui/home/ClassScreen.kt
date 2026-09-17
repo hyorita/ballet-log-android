@@ -27,6 +27,7 @@ import androidx.compose.ui.res.painterResource
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.LogCard
+import com.hyorita.balletlog.ui.common.TagFilterRow
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -42,7 +43,22 @@ import java.util.Locale
 fun ClassScreen(vm: HomeViewModel = viewModel()) {
     val logs by vm.logs.collectAsState()
     val sorted = remember(logs) { logs.sortedByDescending { it.date } }
-    val groups = remember(sorted) { groupByMonth(sorted) }
+
+    // 1.15: tag filter, same semantics as the Log tab — flat AND across every
+    // selected tag, no per-category grouping (see TagFilterRow).
+    var selectedTags by remember { mutableStateOf<Set<String>>(emptySet()) }
+    val allTags = remember(sorted) {
+        sorted.flatMap { it.tags }.filter { it.isNotBlank() }.distinct().sorted()
+    }
+    LaunchedEffect(allTags) {
+        val pruned = selectedTags.filterTo(mutableSetOf()) { it in allTags }
+        if (pruned != selectedTags) selectedTags = pruned
+    }
+    val filteredSorted = remember(sorted, selectedTags) {
+        if (selectedTags.isEmpty()) sorted
+        else sorted.filter { it.tags.toSet().containsAll(selectedTags) }
+    }
+    val groups = remember(filteredSorted) { groupByMonth(filteredSorted) }
 
     var showEditor by remember { mutableStateOf(false) }
     var showDetail by remember { mutableStateOf(false) }
@@ -79,6 +95,37 @@ fun ClassScreen(vm: HomeViewModel = viewModel()) {
                 contentPadding = PaddingValues(top = 4.dp, bottom = 80.dp),
                 verticalArrangement = Arrangement.spacedBy(2.dp)
             ) {
+                if (allTags.isNotEmpty()) {
+                    item(key = "tag_filter") {
+                        TagFilterRow(
+                            allTags = allTags,
+                            selectedTags = selectedTags,
+                            onToggle = { tag ->
+                                selectedTags = selectedTags.toMutableSet().apply {
+                                    if (!add(tag)) remove(tag)
+                                }
+                            },
+                            onClear = { selectedTags = emptySet() }
+                        )
+                    }
+                }
+                if (selectedTags.isNotEmpty() && groups.isEmpty()) {
+                    item(key = "no_results") {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(vertical = 40.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Text(
+                                stringResource(R.string.no_results),
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                    }
+                    return@LazyColumn
+                }
                 groups.forEach { group ->
                     val isCollapsed = collapsed[group.key] == true
                     item(key = "h_${group.key}") {

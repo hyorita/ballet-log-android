@@ -17,9 +17,12 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.AddAPhoto
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Favorite
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.filled.Place
 import androidx.compose.material.icons.filled.Watch
 import androidx.compose.material.icons.outlined.FavoriteBorder
 import androidx.compose.material3.*
@@ -38,6 +41,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.ImeAction
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.TextFieldValue
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -51,10 +55,25 @@ import com.hyorita.balletlog.data.TermLanguagePreferences
 import com.hyorita.balletlog.data.TermStore
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.data.model.PhotoItem
+import com.hyorita.balletlog.data.model.PhotoLogTag
 import com.hyorita.balletlog.data.model.Step
+import com.hyorita.balletlog.ui.common.TagInputSheet
 import com.hyorita.balletlog.util.debugLog
+import androidx.compose.ui.graphics.vector.ImageVector
+import kotlinx.coroutines.flow.StateFlow
 import java.text.SimpleDateFormat
 import java.util.*
+
+private enum class TagField { Studio, Level, Teacher }
+
+private data class TagSheetSpec(
+    val title: String,
+    val placeholder: String,
+    val icon: ImageVector,
+    val current: String,
+    val setter: (String) -> Unit,
+    val tagsFlow: StateFlow<List<PhotoLogTag>>
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -92,6 +111,14 @@ fun EditorScreen(
     var fetchedWorkout by remember { mutableStateOf<com.hyorita.balletlog.data.model.WorkoutInfo?>(null) }
     var savedLogId by remember { mutableStateOf<String?>(existingLog?.id) }
 
+    // 1.15: studio/level/teacher, one value per category. Read back by index,
+    // not compacted on save — a blank studio must not shift level/teacher
+    // into the wrong slot.
+    var studio by remember { mutableStateOf(existingLog?.tags?.getOrNull(0).orEmpty()) }
+    var level by remember { mutableStateOf(existingLog?.tags?.getOrNull(1).orEmpty()) }
+    var teacher by remember { mutableStateOf(existingLog?.tags?.getOrNull(2).orEmpty()) }
+    var activeTagField by remember { mutableStateOf<TagField?>(null) }
+
     val hasChanges = existingLog == null ||
         savedLogId != existingLog.id ||
         date != existingLog.date ||
@@ -100,7 +127,10 @@ fun EditorScreen(
         centerMusic != existingLog.centerMusic ||
         photos.map { it.fileName } != existingLog.photos.map { it.fileName } ||
         barreSteps.map { it.name + it.note } != existingLog.barreSteps.map { it.name + it.note } ||
-        centerSteps.map { it.name + it.note } != existingLog.centerSteps.map { it.name + it.note }
+        centerSteps.map { it.name + it.note } != existingLog.centerSteps.map { it.name + it.note } ||
+        studio != existingLog.tags.getOrNull(0).orEmpty() ||
+        level != existingLog.tags.getOrNull(1).orEmpty() ||
+        teacher != existingLog.tags.getOrNull(2).orEmpty()
 
     // 1.8: auto-save covers both existing logs (always update) and new
     // logs with meaningful content typed (insert). Brand-new drafts with
@@ -111,7 +141,8 @@ fun EditorScreen(
         barreSteps.any { it.note.isNotBlank() } ||
         centerSteps.any { it.note.isNotBlank() } ||
         barreMusic.isNotBlank() ||
-        centerMusic.isNotBlank()
+        centerMusic.isNotBlank() ||
+        studio.isNotBlank() || level.isNotBlank() || teacher.isNotBlank()
 
     var didSaveExplicitly by remember { mutableStateOf(false) }
     var didDiscardExplicitly by remember { mutableStateOf(false) }
@@ -127,7 +158,8 @@ fun EditorScreen(
                 barreMusic = barreMusic,
                 centerMusic = centerMusic,
                 notes = notes,
-                favorite = favorite
+                favorite = favorite,
+                tags = listOf(studio, level, teacher)
             ).copy(
                 id = targetId,
                 workoutJson = fetchedWorkout?.let { gson.toJson(it) }
@@ -143,7 +175,8 @@ fun EditorScreen(
                 barreMusic = barreMusic,
                 centerMusic = centerMusic,
                 notes = notes,
-                favorite = favorite
+                favorite = favorite,
+                tags = listOf(studio, level, teacher)
             ).copy(
                 workoutJson = fetchedWorkout?.let { gson.toJson(it) }
             )
@@ -245,7 +278,8 @@ fun EditorScreen(
                             barreMusic = barreMusic,
                             centerMusic = centerMusic,
                             notes = notes,
-                            favorite = favorite
+                            favorite = favorite,
+                            tags = listOf(studio, level, teacher)
                         ).let {
                             val id = savedLogId
                             if (id != null) it.copy(
@@ -309,6 +343,47 @@ fun EditorScreen(
                             modifier = Modifier.fillMaxWidth()
                         ) {
                             Text(dateFormat.format(Date(date)))
+                        }
+                    }
+                }
+            }
+
+            // 1.15: 스튜디오/레벨/선생님 태그 — Log 탭과 같은 photo_log_tags 풀 공유
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(
+                        containerColor = MaterialTheme.colorScheme.surfaceContainerHigh
+                    )
+                ) {
+                    Column(modifier = Modifier.padding(14.dp)) {
+                        Text(stringResource(R.string.class_tags_label),
+                            style = MaterialTheme.typography.labelMedium,
+                            color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(8.dp))
+                        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                            TagCapsule(
+                                icon = Icons.Default.Place,
+                                label = stringResource(R.string.photolog_meta_studio),
+                                value = studio,
+                                modifier = Modifier.weight(1f),
+                                onClick = { activeTagField = TagField.Studio }
+                            )
+                            TagCapsule(
+                                icon = Icons.Default.BarChart,
+                                label = stringResource(R.string.photolog_meta_level),
+                                value = level,
+                                modifier = Modifier.weight(1f),
+                                onClick = { activeTagField = TagField.Level }
+                            )
+                            TagCapsule(
+                                icon = Icons.Default.Person,
+                                label = stringResource(R.string.photolog_meta_teacher),
+                                value = teacher,
+                                modifier = Modifier.weight(1f),
+                                onClick = { activeTagField = TagField.Teacher }
+                            )
                         }
                     }
                 }
@@ -639,7 +714,8 @@ fun EditorScreen(
                             barreMusic = barreMusic,
                             centerMusic = centerMusic,
                             notes = notes,
-                            favorite = favorite
+                            favorite = favorite,
+                            tags = listOf(studio, level, teacher)
                         ).let {
                             val id = savedLogId
                             if (id != null) it.copy(id = id) else it
@@ -693,6 +769,39 @@ fun EditorScreen(
         }
     }
 
+    activeTagField?.let { field ->
+        val (title, placeholder, icon, current, setter, tagsFlow) = when (field) {
+            TagField.Studio -> TagSheetSpec(
+                stringResource(R.string.photolog_meta_studio),
+                stringResource(R.string.photolog_studio_placeholder),
+                Icons.Default.Place,
+                studio, { v: String -> studio = v }, vm.studioTags
+            )
+            TagField.Level -> TagSheetSpec(
+                stringResource(R.string.photolog_meta_level),
+                stringResource(R.string.photolog_meta_level),
+                Icons.Default.BarChart,
+                level, { v: String -> level = v }, vm.levelTags
+            )
+            TagField.Teacher -> TagSheetSpec(
+                stringResource(R.string.photolog_meta_teacher),
+                stringResource(R.string.photolog_meta_teacher),
+                Icons.Default.Person,
+                teacher, { v: String -> teacher = v }, vm.teacherTags
+            )
+        }
+        TagInputSheet(
+            title = title,
+            placeholder = placeholder,
+            icon = icon,
+            value = current,
+            tags = tagsFlow.collectAsState().value,
+            onValueChange = setter,
+            onDeleteTag = { vm.deleteTag(it) },
+            onDismiss = { activeTagField = null }
+        )
+    }
+
     if (showDatePicker) {
         val datePickerState = rememberDatePickerState(initialSelectedDateMillis = date)
         DatePickerDialog(
@@ -742,5 +851,42 @@ fun EditorScreen(
                 }) { Text(stringResource(R.string.discard)) }
             }
         )
+    }
+}
+
+/** Tappable capsule opening [TagInputSheet] for one of studio/level/teacher. */
+@Composable
+private fun TagCapsule(
+    icon: ImageVector,
+    label: String,
+    value: String,
+    modifier: Modifier = Modifier,
+    onClick: () -> Unit
+) {
+    Surface(
+        shape = RoundedCornerShape(20.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHighest,
+        modifier = modifier.clickable(onClick = onClick)
+    ) {
+        Row(
+            modifier = Modifier.padding(horizontal = 10.dp, vertical = 8.dp),
+            verticalAlignment = Alignment.CenterVertically,
+            horizontalArrangement = Arrangement.spacedBy(6.dp)
+        ) {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(16.dp)
+            )
+            Text(
+                value.ifBlank { label },
+                style = MaterialTheme.typography.labelMedium,
+                color = if (value.isBlank()) MaterialTheme.colorScheme.outline
+                else MaterialTheme.colorScheme.onSurface,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
+            )
+        }
     }
 }

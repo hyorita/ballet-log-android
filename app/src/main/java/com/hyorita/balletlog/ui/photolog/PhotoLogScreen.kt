@@ -42,6 +42,7 @@ import kotlin.math.abs
 import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
+import com.hyorita.balletlog.ui.common.TagFilterRow
 import com.hyorita.balletlog.data.CollapsedMonthsPreferences
 import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.TutorialPreferences
@@ -397,65 +398,6 @@ private fun pluralishPhotos(n: Int) = stringResource(R.string.log_month_photos, 
 
 @Composable
 private fun pluralishWorkouts(n: Int) = stringResource(R.string.log_month_workouts, n)
-
-/**
- * 1.12: horizontal chip row above the collage for narrowing the grid by a
- * studio / level / teacher tag. Compact single row (photos stay the focus);
- * tapping a chip toggles it, selected chips are ANDed. A leading clear chip
- * appears once anything is selected. Selection shows as a filled capsule alone
- * (no checkmark). Mirrors iOS `tagFilterRow`.
- */
-@Composable
-private fun TagFilterRow(
-    allTags: List<String>,
-    selectedTags: Set<String>,
-    onToggle: (String) -> Unit,
-    onClear: () -> Unit
-) {
-    Row(
-        modifier = Modifier
-            .fillMaxWidth()
-            .horizontalScroll(rememberScrollState())
-            .padding(horizontal = 16.dp, vertical = 4.dp),
-        horizontalArrangement = Arrangement.spacedBy(8.dp),
-        verticalAlignment = Alignment.CenterVertically
-    ) {
-        if (selectedTags.isNotEmpty()) {
-            Surface(
-                shape = CircleShape,
-                color = MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.clickable(onClick = onClear)
-            ) {
-                Icon(
-                    Icons.Default.Close,
-                    contentDescription = stringResource(R.string.log_clear_filters),
-                    tint = MaterialTheme.colorScheme.onSurfaceVariant,
-                    modifier = Modifier
-                        .padding(horizontal = 10.dp, vertical = 7.dp)
-                        .size(14.dp)
-                )
-            }
-        }
-        allTags.forEach { tag ->
-            val selected = tag in selectedTags
-            Surface(
-                shape = CircleShape,
-                color = if (selected) MaterialTheme.colorScheme.primary
-                else MaterialTheme.colorScheme.surfaceVariant,
-                modifier = Modifier.clickable { onToggle(tag) }
-            ) {
-                Text(
-                    tag,
-                    color = if (selected) MaterialTheme.colorScheme.onPrimary
-                    else MaterialTheme.colorScheme.onSurface,
-                    style = MaterialTheme.typography.labelLarge,
-                    fontWeight = if (selected) FontWeight.SemiBold else FontWeight.Normal,
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-                )
-            }
-        }
-    }
-}
 
 @Composable
 private fun CollageRowView(row: CollageRow, onTap: (PhotoLog) -> Unit) {

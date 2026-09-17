@@ -437,8 +437,28 @@ fun PhotoLogEditScreen(
                 MetaField.Teacher -> vm.teacherTags
                 else -> vm.studioTags
             }
-            TagInputSheet(
-                field = field,
+            val title = when (field) {
+                MetaField.Studio -> stringResource(R.string.photolog_meta_studio)
+                MetaField.Level -> stringResource(R.string.photolog_meta_level)
+                MetaField.Teacher -> stringResource(R.string.photolog_meta_teacher)
+                else -> ""
+            }
+            val placeholder = when (field) {
+                MetaField.Studio -> stringResource(R.string.photolog_studio_placeholder)
+                MetaField.Level -> stringResource(R.string.photolog_meta_level)
+                MetaField.Teacher -> stringResource(R.string.photolog_meta_teacher)
+                else -> ""
+            }
+            val icon = when (field) {
+                MetaField.Studio -> Icons.Default.Place
+                MetaField.Level -> Icons.Default.BarChart
+                MetaField.Teacher -> Icons.Default.Person
+                else -> Icons.Default.Place
+            }
+            com.hyorita.balletlog.ui.common.TagInputSheet(
+                title = title,
+                placeholder = placeholder,
+                icon = icon,
                 value = current,
                 tags = tagFlow.collectAsState().value,
                 onValueChange = setter,
@@ -779,7 +799,7 @@ private fun WorkoutSheet(
 }
 
 @Composable
-private fun SheetHeader(title: String, onConfirm: () -> Unit) {
+fun SheetHeader(title: String, onConfirm: () -> Unit) {
     Box(
         modifier = Modifier
             .fillMaxWidth()
@@ -865,185 +885,3 @@ private fun CompactNumberRow(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class)
-@Composable
-private fun TagInputSheet(
-    field: MetaField,
-    value: String,
-    tags: List<PhotoLogTag>,
-    onValueChange: (String) -> Unit,
-    onDeleteTag: (PhotoLogTag) -> Unit,
-    onDismiss: () -> Unit
-) {
-    val title = when (field) {
-        MetaField.Studio -> stringResource(R.string.photolog_meta_studio)
-        MetaField.Level -> stringResource(R.string.photolog_meta_level)
-        MetaField.Teacher -> stringResource(R.string.photolog_meta_teacher)
-        else -> ""
-    }
-    val placeholder = when (field) {
-        MetaField.Studio -> stringResource(R.string.photolog_studio_placeholder)
-        MetaField.Level -> stringResource(R.string.photolog_meta_level)
-        MetaField.Teacher -> stringResource(R.string.photolog_meta_teacher)
-        else -> ""
-    }
-    val icon = when (field) {
-        MetaField.Studio -> Icons.Default.Place
-        MetaField.Level -> Icons.Default.BarChart
-        MetaField.Teacher -> Icons.Default.Person
-        else -> Icons.Default.Place
-    }
-
-    val focus = remember { FocusRequester() }
-    val keyboard = LocalSoftwareKeyboardController.current
-    // Own selection so re-opening the sheet drops the cursor at the end of
-    // the existing value instead of jumping to position 0.
-    var tfv by remember {
-        mutableStateOf(TextFieldValue(value, TextRange(value.length)))
-    }
-    LaunchedEffect(field) {
-        delay(80)
-        runCatching { focus.requestFocus() }
-        keyboard?.show()
-    }
-
-    val sheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
-    var tagToDeleteConfirm by remember { mutableStateOf<PhotoLogTag?>(null) }
-
-    ModalBottomSheet(
-        onDismissRequest = onDismiss,
-        sheetState = sheetState,
-        contentWindowInsets = {
-            BottomSheetDefaults.windowInsets.union(WindowInsets.ime)
-        },
-        dragHandle = { BottomSheetDefaults.DragHandle() }
-    ) {
-        Column(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(bottom = 16.dp)
-        ) {
-            SheetHeader(title = title, onConfirm = onDismiss)
-
-            // Borderless input row + hairline divider — iOS style
-            Column(modifier = Modifier.padding(horizontal = 20.dp)) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Icon(
-                        icon,
-                        contentDescription = null,
-                        tint = MaterialTheme.colorScheme.outline,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(Modifier.width(10.dp))
-                    BasicTextField(
-                        value = tfv,
-                        onValueChange = { newTfv ->
-                            tfv = newTfv
-                            onValueChange(newTfv.text)
-                        },
-                        singleLine = true,
-                        cursorBrush = SolidColor(MaterialTheme.colorScheme.primary),
-                        textStyle = MaterialTheme.typography.bodyLarge.copy(
-                            color = MaterialTheme.colorScheme.onSurface
-                        ),
-                        modifier = Modifier
-                            .weight(1f)
-                            .focusRequester(focus),
-                        decorationBox = { inner ->
-                            if (tfv.text.isEmpty()) {
-                                Text(
-                                    placeholder,
-                                    style = MaterialTheme.typography.bodyLarge,
-                                    color = MaterialTheme.colorScheme.outline
-                                )
-                            }
-                            inner()
-                        }
-                    )
-                }
-                Spacer(Modifier.height(8.dp))
-                HorizontalDivider(
-                    color = MaterialTheme.colorScheme.outline.copy(alpha = 0.2f),
-                    thickness = 0.5.dp
-                )
-            }
-
-            if (tags.isNotEmpty()) {
-                Spacer(Modifier.height(20.dp))
-                Text(
-                    stringResource(R.string.photolog_recent_tags),
-                    style = MaterialTheme.typography.labelMedium,
-                    color = MaterialTheme.colorScheme.outline,
-                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 4.dp)
-                )
-                FlowRow(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .padding(horizontal = 20.dp, vertical = 6.dp)
-                        .verticalScroll(rememberScrollState()),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp),
-                    verticalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    tags.take(20).forEach { tag ->
-                        SuggestionChip(
-                            value = tag.value,
-                            onTap = {
-                                tfv = TextFieldValue(tag.value, TextRange(tag.value.length))
-                                onValueChange(tag.value)
-                            },
-                            onLongPress = { tagToDeleteConfirm = tag }
-                        )
-                    }
-                }
-            }
-        }
-    }
-
-    tagToDeleteConfirm?.let { tag ->
-        AlertDialog(
-            onDismissRequest = { tagToDeleteConfirm = null },
-            title = { Text(stringResource(R.string.photolog_tag_delete_title)) },
-            text = { Text("\"${tag.value}\"") },
-            confirmButton = {
-                TextButton(onClick = {
-                    onDeleteTag(tag)
-                    tagToDeleteConfirm = null
-                }) {
-                    Text(
-                        stringResource(R.string.delete),
-                        color = MaterialTheme.colorScheme.error
-                    )
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { tagToDeleteConfirm = null }) {
-                    Text(stringResource(R.string.cancel))
-                }
-            }
-        )
-    }
-}
-
-@OptIn(ExperimentalFoundationApi::class)
-@Composable
-private fun SuggestionChip(
-    value: String,
-    onTap: () -> Unit,
-    onLongPress: () -> Unit
-) {
-    Surface(
-        shape = CircleShape,
-        color = MaterialTheme.colorScheme.primary.copy(alpha = 0.12f),
-        modifier = Modifier.combinedClickable(
-            onClick = onTap,
-            onLongClick = onLongPress
-        )
-    ) {
-        Text(
-            value,
-            color = MaterialTheme.colorScheme.primary,
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp)
-        )
-    }
-}

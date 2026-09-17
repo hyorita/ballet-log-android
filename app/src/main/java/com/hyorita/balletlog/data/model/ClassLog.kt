@@ -19,9 +19,16 @@ data class ClassLog(
     val notes: String = "",
     val workoutJson: String? = null,
     val favorite: Boolean = false,
-    @ColumnInfo(name = "view_count", defaultValue = "0") val viewCount: Int = 0
+    @ColumnInfo(name = "view_count", defaultValue = "0") val viewCount: Int = 0,
+    // 1.15: studio/level/teacher, positionally — index 0/1/2, blanks kept so a
+    // field left empty doesn't shift the ones after it out of their category.
+    @ColumnInfo(defaultValue = "[]") val tagsJson: String = "[]"
 ) {
     private val gson get() = Gson()
+
+    var tags: List<String>
+        get() = gson.fromJson(tagsJson, object : TypeToken<List<String>>() {}.type) ?: emptyList()
+        set(_) {}
 
     var barreSteps: List<Step>
         get() = gson.fromJson(barreStepsJson, object : TypeToken<List<Step>>() {}.type) ?: emptyList()
@@ -50,7 +57,8 @@ data class ClassLog(
             notes: String = "",
             workout: WorkoutInfo? = null,
             favorite: Boolean = false,
-            viewCount: Int = 0
+            viewCount: Int = 0,
+            tags: List<String> = emptyList()
         ): ClassLog {
             val gson = Gson()
             return ClassLog(
@@ -63,7 +71,8 @@ data class ClassLog(
                 notes = notes,
                 workoutJson = workout?.let { gson.toJson(it) },
                 favorite = favorite,
-                viewCount = viewCount
+                viewCount = viewCount,
+                tagsJson = gson.toJson(tags)
             )
         }
     }

@@ -184,6 +184,33 @@ fun DetailScreen(
                 }
             }
 
+            // 1.15: 스튜디오/레벨/선생님 태그 (있을 때만, 읽기 전용)
+            // log.tags keeps its 3 slots positionally, including blanks — a log
+            // with nothing tagged is ["", "", ""], not an empty list.
+            val nonBlankTags = log.tags.filter { it.isNotBlank() }
+            if (nonBlankTags.isNotEmpty()) {
+                item {
+                    Row(
+                        horizontalArrangement = Arrangement.spacedBy(6.dp),
+                        modifier = Modifier.padding(horizontal = 16.dp)
+                    ) {
+                        nonBlankTags.forEach { tag ->
+                            Surface(
+                                shape = CircleShape,
+                                color = MaterialTheme.colorScheme.surfaceContainerHigh
+                            ) {
+                                Text(
+                                    tag,
+                                    style = MaterialTheme.typography.labelMedium,
+                                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 4.dp)
+                                )
+                            }
+                        }
+                    }
+                }
+            }
+
             // 사진 페이저 (있을 때만)
             if (log.photos.isNotEmpty()) {
                 item {
