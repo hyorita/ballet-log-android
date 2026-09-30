@@ -7,6 +7,9 @@
     <string name="nav_class">클래스</string>
     <string name="nav_notes">노트</string>
     <string name="nav_history">기록</string>
+    <!-- 1.16: Stats replaces History as the fourth tab -->
+    <string name="nav_stats">통계</string>
+    <string name="nav_stats_new_badge">New</string>
 
     <!-- Photo Log -->
     <string name="photolog_new">새 로그</string>
@@ -203,19 +206,30 @@
     <string name="note_tag_placeholder">예: 에뽈망, 폴드브라</string>
     <string name="remove_workout">운동 삭제</string>
     <string name="stats_title">통계</string>
-    <string name="stats_classes">수업</string>
-    <string name="stats_workout_time">운동 시간</string>
-    <string name="stats_hardest_workout">최고강도 운동</string>
-    <string name="stats_top_viewed">많이 본 수업</string>
     <string name="stats_period_week">이번 주</string>
     <string name="stats_period_month">이번 달</string>
     <string name="stats_period_year">연간</string>
-    <string name="stats_chart_classes_week">최근 7일 수업</string>
-    <string name="stats_chart_classes_month">주간 수업 횟수</string>
-    <string name="stats_chart_classes_year">월간 수업 횟수</string>
-    <string name="stats_chart_time_week">요일별 운동 시간 (분)</string>
-    <string name="stats_chart_time_month">주간 평균 운동 시간 (분)</string>
-    <string name="stats_chart_time_year">월간 평균 운동 시간 (분)</string>
+    <!-- 1.16 Stats redesign — wording from iOS Localizable.xcstrings -->
+    <string name="stats_classes">수업</string>
+    <string name="stats_workout_time">운동 시간</string>
+    <string name="stats_active_energy">활동 에너지</string>
+    <string name="stats_hardest">최고강도</string>
+    <string name="stats_chart_week">일별 운동 시간(분)</string>
+    <string name="stats_chart_month">주간 수업 횟수</string>
+    <string name="stats_chart_year">월간 수업 횟수</string>
+    <string name="stats_avg_week">평균 %1$d분</string>
+    <string name="stats_avg_month">주 평균 %1$s회</string>
+    <string name="stats_avg_year">월 평균 %1$s회</string>
+    <string name="stats_streak_current">현재 연속 기록</string>
+    <string name="stats_streak_longest">최장</string>
+    <string name="stats_streak_total">합계</string>
+    <string name="stats_streak_days">일</string>
+    <string name="stats_streak_new_record">신기록</string>
+    <string name="stats_streak_hint_start">다음 클래스부터 새 연속 기록이 시작돼요</string>
+    <string name="stats_streak_hint_record">역대 최장 기록 — %1$s부터</string>
+    <string name="stats_streak_hint_one_more">하루만 더 하면 기록과 같아져요</string>
+    <string name="stats_streak_hint_last">최근 클래스 %1$s</string>
+    <string name="stats_by_studio">스튜디오별</string>
     <string name="stats_empty_title">아직 수업 기록이 없어요</string>
     <string name="stats_empty_subtitle">수업을 기록하면 여기서 통계를 볼 수 있어요.</string>
 

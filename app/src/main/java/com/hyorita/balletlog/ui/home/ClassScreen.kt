@@ -13,6 +13,7 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.CalendarMonth
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -28,6 +29,7 @@ import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.LogCard
 import com.hyorita.balletlog.ui.common.TagFilterRow
+import com.hyorita.balletlog.ui.history.HistoryScreen
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
@@ -37,6 +39,8 @@ import java.util.Locale
  *
  * Pinned header (+ button + "Class Log" title) over a monthly accordion.
  * Each month folds open by default; tap header to collapse.
+ *
+ * 1.16: the calendar icon on the right opens History, which left the tab bar.
  */
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +66,7 @@ fun ClassScreen(vm: HomeViewModel = viewModel()) {
 
     var showEditor by remember { mutableStateOf(false) }
     var showDetail by remember { mutableStateOf(false) }
+    var showHistory by remember { mutableStateOf(false) }
     var selectedLog by remember { mutableStateOf<ClassLog?>(null) }
     val collapsed = remember { mutableStateMapOf<String, Boolean>() }
 
@@ -77,6 +82,15 @@ fun ClassScreen(vm: HomeViewModel = viewModel()) {
                 navigationIcon = {
                     IconButton(onClick = { selectedLog = null; showEditor = true }) {
                         Icon(Icons.Default.Add, contentDescription = stringResource(R.string.new_class))
+                    }
+                },
+                actions = {
+                    IconButton(onClick = { showHistory = true }) {
+                        Icon(
+                            Icons.Default.CalendarMonth,
+                            contentDescription = stringResource(R.string.nav_history),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -167,9 +181,26 @@ fun ClassScreen(vm: HomeViewModel = viewModel()) {
     // hidden while either is active so the overlay covers the full screen
     // and IME padding doesn't double-count the NavBar inset.
     val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
-    androidx.compose.runtime.DisposableEffect(showDetail, showEditor) {
-        if (showDetail || showEditor) bottomBarVisible.value = false
+    androidx.compose.runtime.DisposableEffect(showDetail, showEditor, showHistory) {
+        if (showDetail || showEditor || showHistory) bottomBarVisible.value = false
         onDispose { bottomBarVisible.value = true }
+    }
+
+    // 1.16: History as a full-screen layer (iOS presents it as a sheet). Not a
+    // ModalBottomSheet: History hosts the class/note/photo editors, and text
+    // input inside an M3 sheet fights the IME. History toggles the NavBar for
+    // its own overlays; it gets a private flag so closing one of them doesn't
+    // bring the root NavBar back underneath this layer.
+    if (showHistory) {
+        androidx.activity.compose.BackHandler { showHistory = false }
+        val historyBarVisible = remember { mutableStateOf(false) }
+        androidx.compose.runtime.CompositionLocalProvider(
+            com.hyorita.balletlog.LocalBottomBarVisible provides historyBarVisible
+        ) {
+            Surface(modifier = Modifier.fillMaxSize()) {
+                HistoryScreen(onDismiss = { showHistory = false })
+            }
+        }
     }
 
     if (showDetail) {

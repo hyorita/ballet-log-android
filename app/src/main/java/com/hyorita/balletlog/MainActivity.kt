@@ -14,7 +14,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.systemBars
 import androidx.compose.ui.unit.dp
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CalendarMonth
+import androidx.compose.material.icons.filled.BarChart
 import androidx.compose.material.icons.filled.PhotoLibrary
 import androidx.compose.material.icons.filled.SportsGymnastics
 import androidx.compose.material.icons.filled.MusicNote
@@ -32,6 +32,7 @@ import androidx.compose.ui.platform.LocalContext
 import com.hyorita.balletlog.data.BackfillPreferences
 import com.hyorita.balletlog.data.CatalogRepository
 import com.hyorita.balletlog.data.MusicPreferences
+import com.hyorita.balletlog.data.StatsPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.db.BalletLogDatabase
@@ -46,18 +47,20 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.currentBackStackEntryAsState
 import androidx.navigation.compose.rememberNavController
-import com.hyorita.balletlog.ui.history.HistoryScreen
 import com.hyorita.balletlog.ui.home.ClassScreen
 import com.hyorita.balletlog.ui.music.MusicScreen
 import com.hyorita.balletlog.ui.notes.NotesScreen
 import com.hyorita.balletlog.ui.photolog.PhotoLogScreen
+import com.hyorita.balletlog.ui.stats.StatsScreen
 import com.hyorita.balletlog.ui.theme.BalletLogTheme
 
 sealed class Screen(val route: String, val label: String, val icon: ImageVector, val labelRes: Int) {
     object Log : Screen("log", "Log", Icons.Default.PhotoLibrary, R.string.nav_log)
     object Class : Screen("class", "Class", Icons.Default.SportsGymnastics, R.string.nav_class)
     object Notes : Screen("notes", "Notes", Icons.Default.Note, R.string.nav_notes)
-    object History : Screen("history", "History", Icons.Default.CalendarMonth, R.string.nav_history)
+    // 1.16: Stats takes History's slot; History is now a layer off the Class
+    // header (repeat destination → tab, occasional lookup → layer).
+    object Stats : Screen("stats", "Stats", Icons.Default.BarChart, R.string.nav_stats)
     // 1.13: last, matching iOS. The four personal-record tabs stay together.
     object Music : Screen("music", "Music", Icons.Default.MusicNote, R.string.nav_music)
 }
@@ -130,7 +133,7 @@ val LocalBottomBarVisible = compositionLocalOf { mutableStateOf(true) }
 @Composable
 fun BalletLogApp() {
     val navController = rememberNavController()
-    val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.History, Screen.Music)
+    val tabs = listOf(Screen.Log, Screen.Class, Screen.Notes, Screen.Stats, Screen.Music)
     val bottomBarVisible = remember { mutableStateOf(true) }
 
     // 1.13 Music badge. Loaded here rather than in MusicScreen: a tab's content
@@ -155,6 +158,10 @@ fun BalletLogApp() {
     val newReleases = remember(catalog, lastSeenVersion) {
         CatalogRepository.newReleaseCount(lastSeenVersion)
     }
+    // 1.16 Stats "New" badge — installs that already had records, cleared on
+    // first visit. Decided off the main thread (it counts rows).
+    var hasNewStats by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { hasNewStats = StatsPreferences.hasNewStats(context) }
     val markMusicSeen = {
         val version = CatalogRepository.catalogVersion
         if (version > 0) {
@@ -191,6 +198,15 @@ fun BalletLogApp() {
                                         contentDescription = stringResource(screen.labelRes)
                                     )
                                 }
+                            } else if (screen == Screen.Stats && hasNewStats) {
+                                BadgedBox(badge = {
+                                    Badge { Text(stringResource(R.string.nav_stats_new_badge)) }
+                                }) {
+                                    Icon(
+                                        screen.icon,
+                                        contentDescription = stringResource(screen.labelRes)
+                                    )
+                                }
                             } else {
                                 Icon(
                                     screen.icon,
@@ -203,6 +219,10 @@ fun BalletLogApp() {
                         onClick = {
                             // Opening the tab clears the badge.
                             if (screen == Screen.Music) markMusicSeen()
+                            if (screen == Screen.Stats && hasNewStats) {
+                                StatsPreferences.markSeen(context)
+                                hasNewStats = false
+                            }
                             navController.navigate(screen.route) {
                                 popUpTo(navController.graph.findStartDestination().id) {
                                     saveState = true
@@ -231,7 +251,7 @@ fun BalletLogApp() {
             composable(Screen.Log.route) { PhotoLogScreen() }
             composable(Screen.Class.route) { ClassScreen() }
             composable(Screen.Notes.route) { NotesScreen() }
-            composable(Screen.History.route) { HistoryScreen() }
+            composable(Screen.Stats.route) { StatsScreen() }
             composable(Screen.Music.route) { MusicScreen() }
         }
     }

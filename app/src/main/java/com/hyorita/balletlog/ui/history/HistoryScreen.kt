@@ -9,7 +9,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.BarChart
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.ChevronLeft
 import androidx.compose.material.icons.filled.ChevronRight
 import androidx.compose.material.icons.filled.Close
@@ -55,13 +55,13 @@ import com.hyorita.balletlog.ui.photolog.PhotoLogCard
 import com.hyorita.balletlog.ui.photolog.PhotoLogEditScreen
 import com.hyorita.balletlog.ui.photolog.PhotoLogPager
 import com.hyorita.balletlog.ui.photolog.PhotoLogViewModel
-import com.hyorita.balletlog.ui.stats.StatsScreen
 import java.text.SimpleDateFormat
 import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HistoryScreen(
+    onDismiss: () -> Unit,
     vm: HomeViewModel = viewModel(),
     notesVm: NotesViewModel = viewModel(),
     photoLogVm: PhotoLogViewModel = viewModel()
@@ -83,9 +83,6 @@ fun HistoryScreen(
     var showNoteDetail by remember { mutableStateOf(false) }
     var showNoteEditor by remember { mutableStateOf(false) }
     var selectedNote by remember { mutableStateOf<Note?>(null) }
-
-    var showStats by remember { mutableStateOf(false) }
-    val statsSheetState = rememberModalBottomSheetState(skipPartiallyExpanded = true)
 
     val dayKeyFormat = SimpleDateFormat("yyyy-MM-dd", Locale.getDefault())
     val monthFormat = SimpleDateFormat("MMMM yyyy", Locale.getDefault())
@@ -186,9 +183,11 @@ fun HistoryScreen(
                         fontWeight = FontWeight.SemiBold
                     )
                 },
-                actions = {
-                    IconButton(onClick = { showStats = true }) {
-                        Icon(Icons.Default.BarChart, contentDescription = "Stats")
+                // 1.16: a layer off the Class tab now, not a tab — Stats moved
+                // to its own tab, so the old jump-to-Stats action is gone.
+                navigationIcon = {
+                    IconButton(onClick = onDismiss) {
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -593,26 +592,6 @@ fun HistoryScreen(
                     selectedLog = log
                     showDetail = true
                 }
-            )
-        }
-    }
-
-    // Stats sheet
-    if (showStats) {
-        ModalBottomSheet(
-            onDismissRequest = { showStats = false },
-            sheetState = statsSheetState,
-            dragHandle = null,
-            containerColor = MaterialTheme.colorScheme.background
-        ) {
-            StatsScreen(
-                onDismiss = { showStats = false },
-                onNavigateToLog = { log ->
-                    showStats = false
-                    selectedLog = log
-                    showDetail = true
-                },
-                referenceYearMonth = currentYear to currentMonth
             )
         }
     }
