@@ -272,7 +272,7 @@ dedupe해서, 같은 날 ID 없는 사진 운동이 추가로 잡힐 수 있다.
 - [x] `dev/1.16` 브랜치
 - [x] versionCode 17 / versionName 1.16
 - [x] `assets/catalog.json` 시드 v11
-- [ ] 카운팅 규칙 iOS 정렬 (§주의)
+- [x] 카운팅 규칙 iOS 정렬 (§주의) — `StatsCountingTest` 13건
 - [ ] 탭 개편 (Stats 탭 · History 시트 · Class 헤더 캘린더 아이콘)
 - [ ] New 배지 (`StatsPreferences` + 튜토리얼 게이트)
 - [ ] StatsViewModel — 스트릭 · 경과 구간 · By studio · Top viewed 제거

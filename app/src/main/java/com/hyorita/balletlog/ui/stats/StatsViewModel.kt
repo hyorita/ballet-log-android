@@ -5,6 +5,7 @@ import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import com.hyorita.balletlog.data.db.BalletLogDatabase
 import com.hyorita.balletlog.data.model.ClassLog
+import com.hyorita.balletlog.data.model.PhotoLog
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -39,17 +40,115 @@ data class StatsAggregates(
 )
 
 /**
- * 1.9: one counted activity in the stats window. Built from both ClassLogs and
- * workout-bearing PhotoLog placeholders, then deduped by [externalWorkoutId] so
- * the same Health Connect session logged twice counts once. `isClassLog` lets a
- * ClassLog win the identity tie (it's the richer record).
+ * 1.9: one counted activity in the stats window, from either a ClassLog or a
+ * workout-bearing PhotoLog. `classLog` is set when it came from a class, so the
+ * Hardest card can open its detail.
  */
-private data class StatItem(
+internal data class StatItem(
     val date: Long,
     val durationMinutes: Int,
     val activeCalories: Int,
     val externalWorkoutId: String?,
     val classLog: ClassLog?
+)
+
+private fun ClassLog.toStatItem() = StatItem(
+    date = date,
+    durationMinutes = workout?.durationMinutes ?: 0,
+    activeCalories = workout?.activeCalories ?: 0,
+    externalWorkoutId = workout?.externalWorkoutId,
+    classLog = this
+)
+
+private fun PhotoLog.toStatItem() = StatItem(
+    date = date,
+    durationMinutes = durationMin ?: 0,
+    activeCalories = kcal ?: 0,
+    externalWorkoutId = externalWorkoutId,
+    classLog = null
+)
+
+/**
+ * A PhotoLog that Stats counts as a workout. Narrower than
+ * [PhotoLog.hasWorkoutData] on purpose — iOS ignores heart-rate-only photos
+ * here, and the two platforms should report the same numbers.
+ */
+private val PhotoLog.isStatsWorkout: Boolean get() = kcal != null || durationMin != null
+
+private fun dayKey(millis: Long): Long = Calendar.getInstance().apply {
+    timeInMillis = millis
+    set(Calendar.HOUR_OF_DAY, 0)
+    set(Calendar.MINUTE, 0)
+    set(Calendar.SECOND, 0)
+    set(Calendar.MILLISECOND, 0)
+}.timeInMillis
+
+/**
+ * 1.16: every counted "class" — iOS `classEventDates`. Every ClassLog counts
+ * (two the same day = two, workout or not). A photo workout counts only if it
+ * isn't already one of those classes: by session id when it has one, otherwise
+ * at most once per day and never on a day that already has a class.
+ * Callers pass logs already filtered to the range they want.
+ */
+internal fun classEvents(logs: List<ClassLog>, photos: List<PhotoLog>): List<StatItem> {
+    val events = logs.mapTo(ArrayList()) { it.toStatItem() }
+    val seenIds = logs.mapNotNullTo(HashSet()) { it.workout?.externalWorkoutId }
+    val coveredDays = logs.mapTo(HashSet()) { dayKey(it.date) }
+    val photoWorkouts = photos.filter { it.isStatsWorkout }
+    for (photo in photoWorkouts) {
+        val id = photo.externalWorkoutId ?: continue
+        if (!seenIds.add(id)) continue
+        coveredDays.add(dayKey(photo.date))
+        events.add(photo.toStatItem())
+    }
+    for (photo in photoWorkouts) {
+        if (photo.externalWorkoutId != null) continue
+        if (!coveredDays.add(dayKey(photo.date))) continue
+        events.add(photo.toStatItem())
+    }
+    return events
+}
+
+/**
+ * 1.16: deduped workout sessions for time/kcal totals — iOS `workoutSessions`.
+ * Identified workouts dedupe by session id (distinct same-day sessions each
+ * count); unidentified ones fall back to one per day, skipping any day an
+ * identified workout already covers. ClassLogs go first so they win a tie.
+ */
+internal fun workoutSessions(logs: List<ClassLog>, photos: List<PhotoLog>): List<StatItem> {
+    val entries = logs.filter { it.workout != null }.map { it.toStatItem() } +
+        photos.filter { it.isStatsWorkout }.map { it.toStatItem() }
+    val sessions = ArrayList<StatItem>()
+    val seenIds = HashSet<String>()
+    val coveredDays = HashSet<Long>()
+    for (e in entries) {
+        val id = e.externalWorkoutId ?: continue
+        if (!seenIds.add(id)) continue
+        coveredDays.add(dayKey(e.date))
+        sessions.add(e)
+    }
+    for (e in entries) {
+        if (e.externalWorkoutId != null) continue
+        if (!coveredDays.add(dayKey(e.date))) continue
+        sessions.add(e)
+    }
+    return sessions.sortedBy { it.date }
+}
+
+/**
+ * Highest-kcal workout across class and photo workouts, no dedupe (a max
+ * doesn't need it). ClassLogs come first so they win a tie — the richer detail.
+ */
+internal fun hardestWorkout(logs: List<ClassLog>, photos: List<PhotoLog>): StatItem? =
+    (logs.filter { it.workout != null }.map { it.toStatItem() } +
+        photos.filter { it.kcal != null }.map { it.toStatItem() })
+        .filter { it.activeCalories > 0 }
+        .maxByOrNull { it.activeCalories }
+
+private data class StatSources(
+    val events: List<StatItem>,
+    val sessions: List<StatItem>,
+    val hardest: StatItem?
 )
 
 class StatsViewModel(app: Application) : AndroidViewModel(app) {
@@ -80,38 +179,25 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             .sortedByDescending { it.date }
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    // Deduped counted activities (ClassLog workouts + imported placeholders).
-    private val filteredItems: StateFlow<List<StatItem>> = combine(
+    // 1.16: counted classes, deduped workout sessions and the hardest workout
+    // for the period — same rules as iOS (see classEvents / workoutSessions).
+    private val filteredSources: StateFlow<StatSources> = combine(
         allLogs, allPhotoLogs, selectedPeriod, periodOffset
     ) { logs, photos, period, offset ->
         val (start, end) = computeRange(period, offset)
-        val classItems = logs.filter { it.date in start until end }.map { log ->
-            StatItem(
-                date = log.date,
-                durationMinutes = log.workout?.durationMinutes ?: 0,
-                activeCalories = log.workout?.activeCalories ?: 0,
-                externalWorkoutId = log.workout?.externalWorkoutId,
-                classLog = log
-            )
-        }
-        val photoItems = photos
-            .filter { it.date in start until end && it.hasWorkoutData }
-            .map { p ->
-                StatItem(
-                    date = p.date,
-                    durationMinutes = p.durationMin ?: 0,
-                    activeCalories = p.kcal ?: 0,
-                    externalWorkoutId = p.externalWorkoutId,
-                    classLog = null
-                )
-            }
-        dedupeByIdentity(classItems + photoItems)
-    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+        val periodLogs = logs.filter { it.date in start until end }
+        val periodPhotos = photos.filter { it.date in start until end }
+        StatSources(
+            events = classEvents(periodLogs, periodPhotos),
+            sessions = workoutSessions(periodLogs, periodPhotos),
+            hardest = hardestWorkout(periodLogs, periodPhotos)
+        )
+    }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatSources(emptyList(), emptyList(), null))
 
     val aggregates: StateFlow<StatsAggregates> = combine(
-        filteredItems, filteredLogs, selectedPeriod
-    ) { items, logs, period ->
-        computeAggregates(items, logs, period)
+        filteredSources, filteredLogs, selectedPeriod
+    ) { sources, logs, period ->
+        computeAggregates(sources, logs, period)
     }.stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), StatsAggregates())
 
     val periodLabel: StateFlow<String> = combine(selectedPeriod, periodOffset) { p, o ->
@@ -145,17 +231,6 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         val offset = (year - now.get(Calendar.YEAR)) * 12 + (month - now.get(Calendar.MONTH))
         selectedPeriod.value = StatsPeriod.MONTH
         periodOffset.value = offset.coerceAtMost(0)
-    }
-
-    private fun dedupeByIdentity(items: List<StatItem>): List<StatItem> {
-        val seen = HashSet<String>()
-        val out = ArrayList<StatItem>(items.size)
-        // ClassLog items first so they win an externalId tie over a placeholder.
-        items.sortedByDescending { it.classLog != null }.forEach { item ->
-            val id = item.externalWorkoutId
-            if (id == null || seen.add(id)) out.add(item)
-        }
-        return out
     }
 
     private fun computeRange(period: StatsPeriod, offset: Int): Pair<Long, Long> {
@@ -206,25 +281,27 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
     }
 
     private fun computeAggregates(
-        items: List<StatItem>,
+        sources: StatSources,
         classLogs: List<ClassLog>,
         period: StatsPeriod
     ): StatsAggregates {
-        val totalMinutes = items.sumOf { it.durationMinutes }
-        val totalCalories = items.sumOf { it.activeCalories }
-        val hardest = items.filter { it.activeCalories > 0 }.maxByOrNull { it.activeCalories }
+        val events = sources.events
+        val sessions = sources.sessions
+        val totalMinutes = sessions.sumOf { it.durationMinutes }
+        val totalCalories = sessions.sumOf { it.activeCalories }
+        val hardest = sources.hardest
         // Top viewed stays ClassLog-only — placeholders have no view count.
         val topViewed = classLogs.filter { it.viewCount > 0 }
             .sortedByDescending { it.viewCount }
             .take(5)
 
-        val (cubeData, cubeLabels) = buildCubeData(items, period)
-        val timeData = if (period == StatsPeriod.YEAR) emptyList() else buildTimeData(items, period)
-        val monthlyClassCounts = if (period == StatsPeriod.YEAR) buildMonthlyCounts(items) else emptyList()
-        val monthlyAvgMinutes = if (period == StatsPeriod.YEAR) buildMonthlyAvgMinutes(items) else emptyList()
+        val (cubeData, cubeLabels) = buildCubeData(events, period)
+        val timeData = if (period == StatsPeriod.YEAR) emptyList() else buildTimeData(sessions, period)
+        val monthlyClassCounts = if (period == StatsPeriod.YEAR) buildMonthlyCounts(events) else emptyList()
+        val monthlyAvgMinutes = if (period == StatsPeriod.YEAR) buildMonthlyAvgMinutes(sessions) else emptyList()
 
         return StatsAggregates(
-            totalClasses = items.size,
+            totalClasses = events.size,
             totalMinutes = totalMinutes,
             totalCalories = totalCalories,
             hardestCalories = hardest?.activeCalories,
