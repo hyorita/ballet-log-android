@@ -86,14 +86,15 @@ hasNewStats = hasSeenLogTutorial && statsLastSeenVersion < statsFeatureVersion
 - 날짜가 아니라 버전 정수 — Music 배지(`MusicPreferences`)와 같은 이유. 새
   `StatsPreferences`(SharedPreferences, 키 `statsLastSeenVersion`)로 두면 기존 구조와 맞음
 - `MainActivity`에 Music용 `BadgedBox`가 이미 있으니 같은 패턴
-- **iOS와 다른 점 (의도적): 기존 사용자 판정을 "기록이 있는가"로.** 튜토리얼
+- **기존 사용자 판정 = "기록이 있는가" (처음엔 iOS와 달랐으나 iOS가 맞춤).** 튜토리얼
   플래그는 "첫 로그 생성"이 아니라 **Log 탭 `+` 탭** 시점에 켜진다(iOS·안드로이드 동일).
   그래서 ① 신규 사용자가 `+`를 한 번 누르면 다음 실행부터 "New"가 뜨고,
   ② 백업 복원했거나 Class 탭만 쓴 기존 사용자는 플래그가 없어 배지를 못 본다.
   ②는 실기기에서 실제로 확인됨 — 데이터가 많은 debug 앱에 `balletlog_tutorial.xml`이
   아예 없었다. 안드로이드 `StatsPreferences.hasNewStats`는 ClassLog·PhotoLog·Note 중
   하나라도 있으면 기존 사용자, 전부 비어 있으면 **그 자리에서 본 것으로 기록**.
-  iOS 1.16.x에서 같은 수정 검토 필요
+  → **iOS도 1.16 build 3에 같은 규칙으로 반영** (`2652899` 기록 유무 판정, `5fb2d1e` 첫 실행
+  시드 + Note 포함, `5c05b23` 시드를 카탈로그 네트워크 await 앞으로). 이제 두 플랫폼 동일
 
 ## 3. Stats 화면 — 섹션 순서
 
