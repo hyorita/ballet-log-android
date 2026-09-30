@@ -158,8 +158,10 @@ fun BalletLogApp() {
     val newReleases = remember(catalog, lastSeenVersion) {
         CatalogRepository.newReleaseCount(lastSeenVersion)
     }
-    // 1.16 Stats "New" badge — pre-1.16 installs only, cleared on first visit.
-    var hasNewStats by remember { mutableStateOf(StatsPreferences.hasNewStats(context)) }
+    // 1.16 Stats "New" badge — installs that already had records, cleared on
+    // first visit. Decided off the main thread (it counts rows).
+    var hasNewStats by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { hasNewStats = StatsPreferences.hasNewStats(context) }
     val markMusicSeen = {
         val version = CatalogRepository.catalogVersion
         if (version > 0) {

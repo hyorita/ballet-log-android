@@ -10,6 +10,9 @@ interface PhotoLogDao {
     @Query("SELECT * FROM photo_logs ORDER BY date DESC")
     fun getAll(): Flow<List<PhotoLog>>
 
+    @Query("SELECT COUNT(*) FROM photo_logs")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM photo_logs WHERE id = :id")
     suspend fun getById(id: String): PhotoLog?
 

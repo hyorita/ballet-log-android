@@ -86,10 +86,13 @@ hasNewStats = hasSeenLogTutorial && statsLastSeenVersion < statsFeatureVersion
 - 날짜가 아니라 버전 정수 — Music 배지(`MusicPreferences`)와 같은 이유. 새
   `StatsPreferences`(SharedPreferences, 키 `statsLastSeenVersion`)로 두면 기존 구조와 맞음
 - `MainActivity`에 Music용 `BadgedBox`가 이미 있으니 같은 패턴
-- **iOS와 다른 점 (의도적):** 튜토리얼 플래그는 실제로는 "첫 로그 생성"이 아니라
-  **Log 탭 `+` 탭** 시점에 켜진다(iOS·안드로이드 동일). 그래서 iOS에서는 신규 사용자가
-  `+`를 한 번 누르면 다음 실행부터 "New"가 뜬다. 안드로이드 `StatsPreferences`는
-  플래그가 꺼진 상태로 실행되면 **그 자리에서 본 것으로 기록**해 막는다.
+- **iOS와 다른 점 (의도적): 기존 사용자 판정을 "기록이 있는가"로.** 튜토리얼
+  플래그는 "첫 로그 생성"이 아니라 **Log 탭 `+` 탭** 시점에 켜진다(iOS·안드로이드 동일).
+  그래서 ① 신규 사용자가 `+`를 한 번 누르면 다음 실행부터 "New"가 뜨고,
+  ② 백업 복원했거나 Class 탭만 쓴 기존 사용자는 플래그가 없어 배지를 못 본다.
+  ②는 실기기에서 실제로 확인됨 — 데이터가 많은 debug 앱에 `balletlog_tutorial.xml`이
+  아예 없었다. 안드로이드 `StatsPreferences.hasNewStats`는 ClassLog·PhotoLog·Note 중
+  하나라도 있으면 기존 사용자, 전부 비어 있으면 **그 자리에서 본 것으로 기록**.
   iOS 1.16.x에서 같은 수정 검토 필요
 
 ## 3. Stats 화면 — 섹션 순서
@@ -194,6 +197,10 @@ hasNewStats = hasSeenLogTutorial && statsLastSeenVersion < statsFeatureVersion
 
 막대 간격: 주 10 · 월 14 · 년 5.
 
+⚠️ **월 차트 주 구분이 다르다 (실기기 확인).** 안드로이드 기존 코드는
+`Calendar.WEEK_OF_MONTH`(일요일 시작 달력 주)라 2026-05-07이 **W2**, iOS는
+`(일 − 1) / 7`이라 **W1**. 리디자인 때 iOS 방식으로 교체
+
 **년 차트 월 라벨:** 한 글자(`J F M …`). 단 ko/ja처럼 숫자로 시작하는 로케일은
 숫자 전체(`10`, `11`, `12`) — 앞 글자만 자르면 10·11·12월이 전부 `1`이 된다.
 
@@ -288,8 +295,14 @@ dedupe해서, 같은 날 ID 없는 사진 운동이 추가로 잡힐 수 있다.
 - [x] versionCode 17 / versionName 1.16
 - [x] `assets/catalog.json` 시드 v11
 - [x] 카운팅 규칙 iOS 정렬 (§주의) — `StatsCountingTest` 13건
-- [x] 탭 개편 (Stats 탭 · History 레이어 · Class 헤더 캘린더 아이콘) — 빌드 확인, **실기기 미확인**
-- [x] New 배지 (`StatsPreferences` + 튜토리얼 게이트) — **실기기 미확인**
+- [x] 탭 개편 (Stats 탭 · History 레이어 · Class 헤더 캘린더 아이콘)
+      — 실기기 확인 (2026-09-30, SM-S926N / Android 16): 탭 5개 · Class 헤더 캘린더 →
+      History 전체 화면(←, 탭바 숨김) · History 안 수업 상세 열고 닫아도 탭바 안 살아남 ·
+      History 안 노트 편집기 IME 정상(칩이 키보드 바로 위) · 뒤로가기 단계별 복귀 →
+      Class 탭에서 탭바 복귀 · Stats 탭 헤더 상태바 여백 정상.
+      Stats→수업 상세 경로는 테스트 데이터상 진입점이 없어 미확인(최고강도가 사진 운동,
+      조회수 0) — 리디자인 후 재확인
+- [x] New 배지 (`StatsPreferences` + 기록 유무 게이트) — 실기기 확인: 기록 있는 앱에 `New`, 탭 열면 사라지고 `statsLastSeenVersion=1` 저장
 - [ ] StatsViewModel — 스트릭 · 경과 구간 · By studio · Top viewed 제거
 - [ ] StatsScreen — 헤더 `+` · 히어로 카드 · 2×2 · 트렌드 · By studio
 - [ ] 공유 이미지 재작성

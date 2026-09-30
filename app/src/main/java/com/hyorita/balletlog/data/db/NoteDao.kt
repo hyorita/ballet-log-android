@@ -9,6 +9,9 @@ interface NoteDao {
     @Query("SELECT * FROM notes ORDER BY pinned DESC, updatedAt DESC")
     fun getAll(): Flow<List<Note>>
 
+    @Query("SELECT COUNT(*) FROM notes")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM notes WHERE id = :id")
     suspend fun getById(id: String): Note?
 

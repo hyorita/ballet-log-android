@@ -9,6 +9,9 @@ interface ClassLogDao {
     @Query("SELECT * FROM class_logs ORDER BY date DESC")
     fun getAll(): Flow<List<ClassLog>>
 
+    @Query("SELECT COUNT(*) FROM class_logs")
+    suspend fun count(): Int
+
     @Query("SELECT * FROM class_logs WHERE id = :id")
     suspend fun getById(id: String): ClassLog?
 
