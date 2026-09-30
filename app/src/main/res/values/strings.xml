@@ -7,6 +7,9 @@
     <string name="nav_class">Class</string>
     <string name="nav_notes">Notes</string>
     <string name="nav_history">History</string>
+    <!-- 1.16: Stats replaces History as the fourth tab -->
+    <string name="nav_stats">Stats</string>
+    <string name="nav_stats_new_badge">New</string>
 
     <!-- Photo Log -->
     <string name="photolog_new">New Log</string>

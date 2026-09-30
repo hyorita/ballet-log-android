@@ -7,6 +7,9 @@
     <string name="nav_class">클래스</string>
     <string name="nav_notes">노트</string>
     <string name="nav_history">기록</string>
+    <!-- 1.16: Stats replaces History as the fourth tab -->
+    <string name="nav_stats">통계</string>
+    <string name="nav_stats_new_badge">New</string>
 
     <!-- Photo Log -->
     <string name="photolog_new">새 로그</string>

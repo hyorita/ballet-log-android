@@ -58,6 +58,16 @@ History는 Class 탭 헤더의 캘린더 아이콘에서 여는 레이어로 내
 `StatsScreen`은 지금 시트 전제로 짜여 있다 (`onDismiss`, `showMonth(year, month)` 앵커).
 탭이 되면서 `onDismiss`와 History→Stats 월 앵커(1.9)는 쓸 곳이 없어진다 — 제거.
 
+**구현 결정 (2026-09-30):**
+- History는 `ModalBottomSheet`가 아니라 **전체 화면 레이어**(`Surface` + `BackHandler`,
+  헤더 좌측 ←). History 안에 클래스·노트·사진 편집기가 있는데 M3 시트 안의 텍스트
+  입력은 IME와 충돌한다. 앱의 다른 오버레이(Detail/Editor)와 같은 방식
+- History는 자기 오버레이를 열고 닫을 때 `LocalBottomBarVisible`을 켰다 껐다 한다 —
+  레이어 안에서 그대로 두면 History 안의 상세를 닫는 순간 루트 탭바가 History 위로
+  되살아난다. ClassScreen이 History에 **별도 플래그**를 provide해서 격리
+- Stats 탭은 최고강도·많이 본 수업 탭 시 **자기 안에서** Detail/Editor를 띄운다
+  (예전엔 History에 로그를 넘겼음)
+
 ## 2. Stats 탭 New 배지
 
 iOS `ContentView`:
@@ -76,6 +86,11 @@ hasNewStats = hasSeenLogTutorial && statsLastSeenVersion < statsFeatureVersion
 - 날짜가 아니라 버전 정수 — Music 배지(`MusicPreferences`)와 같은 이유. 새
   `StatsPreferences`(SharedPreferences, 키 `statsLastSeenVersion`)로 두면 기존 구조와 맞음
 - `MainActivity`에 Music용 `BadgedBox`가 이미 있으니 같은 패턴
+- **iOS와 다른 점 (의도적):** 튜토리얼 플래그는 실제로는 "첫 로그 생성"이 아니라
+  **Log 탭 `+` 탭** 시점에 켜진다(iOS·안드로이드 동일). 그래서 iOS에서는 신규 사용자가
+  `+`를 한 번 누르면 다음 실행부터 "New"가 뜬다. 안드로이드 `StatsPreferences`는
+  플래그가 꺼진 상태로 실행되면 **그 자리에서 본 것으로 기록**해 막는다.
+  iOS 1.16.x에서 같은 수정 검토 필요
 
 ## 3. Stats 화면 — 섹션 순서
 
@@ -273,8 +288,8 @@ dedupe해서, 같은 날 ID 없는 사진 운동이 추가로 잡힐 수 있다.
 - [x] versionCode 17 / versionName 1.16
 - [x] `assets/catalog.json` 시드 v11
 - [x] 카운팅 규칙 iOS 정렬 (§주의) — `StatsCountingTest` 13건
-- [ ] 탭 개편 (Stats 탭 · History 시트 · Class 헤더 캘린더 아이콘)
-- [ ] New 배지 (`StatsPreferences` + 튜토리얼 게이트)
+- [x] 탭 개편 (Stats 탭 · History 레이어 · Class 헤더 캘린더 아이콘) — 빌드 확인, **실기기 미확인**
+- [x] New 배지 (`StatsPreferences` + 튜토리얼 게이트) — **실기기 미확인**
 - [ ] StatsViewModel — 스트릭 · 경과 구간 · By studio · Top viewed 제거
 - [ ] StatsScreen — 헤더 `+` · 히어로 카드 · 2×2 · 트렌드 · By studio
 - [ ] 공유 이미지 재작성

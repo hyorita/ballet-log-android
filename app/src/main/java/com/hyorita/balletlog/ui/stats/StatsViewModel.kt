@@ -221,18 +221,6 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         if (periodOffset.value < 0) periodOffset.value += 1
     }
 
-    /**
-     * 1.9: open stats anchored to a specific month (the one being viewed in
-     * History), mirroring iOS's referenceDate. Clamped to not point at a future
-     * month.
-     */
-    fun showMonth(year: Int, month: Int) {
-        val now = Calendar.getInstance()
-        val offset = (year - now.get(Calendar.YEAR)) * 12 + (month - now.get(Calendar.MONTH))
-        selectedPeriod.value = StatsPeriod.MONTH
-        periodOffset.value = offset.coerceAtMost(0)
-    }
-
     private fun computeRange(period: StatsPeriod, offset: Int): Pair<Long, Long> {
         val cal = Calendar.getInstance().apply {
             set(Calendar.HOUR_OF_DAY, 0)

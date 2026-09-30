@@ -37,6 +37,9 @@ import androidx.compose.ui.unit.sp
 import androidx.lifecycle.viewmodel.compose.viewModel
 import com.hyorita.balletlog.data.model.ClassLog
 import com.hyorita.balletlog.ui.common.shareStatsCard
+import com.hyorita.balletlog.ui.home.DetailScreen
+import com.hyorita.balletlog.ui.home.EditorScreen
+import com.hyorita.balletlog.ui.home.HomeViewModel
 import com.hyorita.balletlog.ui.theme.PinkDark
 import com.hyorita.balletlog.ui.theme.PinkLight
 import com.hyorita.balletlog.ui.theme.PinkMid
@@ -48,9 +51,7 @@ import java.util.Locale
 @Composable
 fun StatsScreen(
     vm: StatsViewModel = viewModel(),
-    onDismiss: () -> Unit = {},
-    onNavigateToLog: (ClassLog) -> Unit = {},
-    referenceYearMonth: Pair<Int, Int>? = null
+    homeVm: HomeViewModel = viewModel()
 ) {
     val period by vm.selectedPeriod.collectAsState()
     val periodLabel by vm.periodLabel.collectAsState()
@@ -58,32 +59,18 @@ fun StatsScreen(
     val aggregates by vm.aggregates.collectAsState()
     val context = LocalContext.current
 
-    // 1.9: anchor to the month being viewed in History (iOS referenceDate).
-    LaunchedEffect(referenceYearMonth) {
-        referenceYearMonth?.let { (y, m) -> vm.showMonth(y, m) }
-    }
+    // 1.16: a tab now, so it opens a class's detail itself instead of handing
+    // the log back to History.
+    val logs by homeVm.logs.collectAsState()
+    var detailLog by remember { mutableStateOf<ClassLog?>(null) }
+    var showEditor by remember { mutableStateOf(false) }
+    val onNavigateToLog: (ClassLog) -> Unit = { detailLog = it }
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(MaterialTheme.colorScheme.background)
     ) {
-        // Drag handle
-        Box(
-            modifier = Modifier
-                .fillMaxWidth()
-                .padding(vertical = 10.dp),
-            contentAlignment = Alignment.Center
-        ) {
-            Box(
-                modifier = Modifier
-                    .width(36.dp)
-                    .height(4.dp)
-                    .clip(RoundedCornerShape(2.dp))
-                    .background(MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f))
-            )
-        }
-
         // Title + Share
         Row(
             modifier = Modifier
@@ -211,6 +198,44 @@ fun StatsScreen(
             }
 
             item { Spacer(Modifier.height(24.dp)) }
+        }
+    }
+
+    // Detail / Editor as inline full-screen overlays — same pattern as the
+    // Class tab, NavBar hidden while either is up.
+    val bottomBarVisible = com.hyorita.balletlog.LocalBottomBarVisible.current
+    DisposableEffect(detailLog, showEditor) {
+        if (detailLog != null || showEditor) bottomBarVisible.value = false
+        onDispose { bottomBarVisible.value = true }
+    }
+
+    detailLog?.let { log ->
+        val liveLog = logs.find { it.id == log.id } ?: log
+        androidx.activity.compose.BackHandler { detailLog = null }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            key(liveLog.workoutJson) {
+                DetailScreen(
+                    log = liveLog,
+                    onDismiss = { detailLog = null },
+                    onEdit = { showEditor = true },
+                    onDelete = { homeVm.deleteLog(liveLog); detailLog = null },
+                    onToggleFavorite = { homeVm.toggleFavorite(liveLog) },
+                    onFetchWorkout = { homeVm.fetchAndSaveWorkout(liveLog) },
+                    onView = { homeVm.incrementViewCount(liveLog.id) }
+                )
+            }
+        }
+    }
+
+    if (showEditor) {
+        val liveLog = detailLog?.let { sel -> logs.find { it.id == sel.id } } ?: detailLog
+        androidx.activity.compose.BackHandler { showEditor = false }
+        Surface(modifier = Modifier.fillMaxSize()) {
+            EditorScreen(
+                existingLog = liveLog,
+                onDismiss = { showEditor = false },
+                vm = homeVm
+            )
         }
     }
 }
