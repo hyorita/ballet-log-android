@@ -15,7 +15,9 @@ import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.ArrowUpward
 import androidx.compose.material.icons.filled.CameraAlt
 import androidx.compose.material.icons.filled.Close
@@ -43,7 +45,9 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import coil.compose.AsyncImage
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.ui.common.TagFilterRow
+import com.hyorita.balletlog.ui.common.openInAppBrowser
 import com.hyorita.balletlog.data.CollapsedMonthsPreferences
+import com.hyorita.balletlog.data.MbtiPreferences
 import com.hyorita.balletlog.data.PhotoLogStorage
 import com.hyorita.balletlog.data.TutorialPreferences
 import com.hyorita.balletlog.data.model.PhotoLog
@@ -65,6 +69,21 @@ fun PhotoLogScreen(
     val context = LocalContext.current
     var hasSeenTutorial by remember { mutableStateOf(TutorialPreferences.hasSeenLogTutorial(context)) }
     val showTutorial = !hasSeenTutorial && logs.isEmpty()
+
+    // 1.16.1 ballet-persona quiz: a red dot on the gear for existing users
+    // (decided off the main thread — it counts rows), and a banner on top of
+    // the Log that retires after its first open.
+    var hasNewMbti by remember { mutableStateOf(false) }
+    LaunchedEffect(Unit) { hasNewMbti = MbtiPreferences.hasNewLink(context) }
+    var mbtiBannerDismissed by remember { mutableStateOf(MbtiPreferences.isBannerDismissed(context)) }
+    // Snapshot for Settings' "New" pill, taken before the same tap clears the dot.
+    var mbtiBadgeWasNew by remember { mutableStateOf(false) }
+    val showMbtiBanner = !showTutorial && !mbtiBannerDismissed
+    val openMbtiFromBanner = {
+        MbtiPreferences.dismissBanner(context)
+        mbtiBannerDismissed = true
+        openInAppBrowser(context, MbtiPreferences.QUIZ_URL)
+    }
 
     Scaffold(
         topBar = {
@@ -92,8 +111,19 @@ fun PhotoLogScreen(
                     }
                 },
                 actions = {
-                    IconButton(onClick = { showSettings = true }) {
-                        Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.photolog_settings))
+                    IconButton(onClick = {
+                        mbtiBadgeWasNew = hasNewMbti
+                        if (hasNewMbti) {
+                            MbtiPreferences.markSeen(context)
+                            hasNewMbti = false
+                        }
+                        showSettings = true
+                    }) {
+                        BadgedBox(badge = {
+                            if (hasNewMbti) Badge(containerColor = Color.Red)
+                        }) {
+                            Icon(Icons.Default.Settings, contentDescription = stringResource(R.string.photolog_settings))
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -107,11 +137,15 @@ fun PhotoLogScreen(
                 TutorialArrow()
             }
             if (logs.isEmpty()) {
+                if (showMbtiBanner) MbtiBanner(onClick = openMbtiFromBanner)
                 EmptyState()
             } else {
                 PhotoLogGrid(
                     logs = logs,
-                    onTap = { viewerStartId = it.id }
+                    onTap = { viewerStartId = it.id },
+                    header = if (showMbtiBanner) {
+                        { MbtiBanner(onClick = openMbtiFromBanner) }
+                    } else null
                 )
             }
         }
@@ -167,7 +201,7 @@ fun PhotoLogScreen(
     if (showSettings) {
         androidx.activity.compose.BackHandler { showSettings = false }
         Surface(modifier = Modifier.fillMaxSize()) {
-            SettingsScreen(onDismiss = { showSettings = false })
+            SettingsScreen(onDismiss = { showSettings = false }, showMbtiBadge = mbtiBadgeWasNew)
         }
     }
 }
@@ -224,7 +258,9 @@ sealed class EditorTarget {
 private fun PhotoLogGrid(
     logs: List<PhotoLog>,
     onTap: (PhotoLog) -> Unit,
-    modifier: Modifier = Modifier
+    modifier: Modifier = Modifier,
+    // Scrolls with the grid, above the tag filter — where iOS puts its banner.
+    header: (@Composable () -> Unit)? = null
 ) {
     val context = LocalContext.current
 
@@ -278,6 +314,9 @@ private fun PhotoLogGrid(
         modifier = modifier.fillMaxSize(),
         verticalArrangement = Arrangement.spacedBy(COLLAGE_SPACING)
     ) {
+        if (header != null) {
+            item(key = "header") { header() }
+        }
         if (allTags.isNotEmpty()) {
             item(key = "tag_filter") {
                 TagFilterRow(
@@ -635,6 +674,53 @@ private fun WorkoutStripCard(
                 )
             }
         }
+    }
+}
+
+/**
+ * 1.16.1 promo card for the ballet-persona web quiz. Styled like the Stats
+ * cards so it reads as part of the app, not an ad. No X — opening it once is
+ * the way out, and Settings keeps the permanent entry point.
+ */
+@Composable
+private fun MbtiBanner(onClick: () -> Unit) {
+    Row(
+        modifier = Modifier
+            .padding(horizontal = 16.dp, vertical = 6.dp)
+            .fillMaxWidth()
+            .clip(androidx.compose.foundation.shape.RoundedCornerShape(16.dp))
+            .background(MaterialTheme.colorScheme.surfaceContainerLow)
+            .clickable(onClick = onClick)
+            .padding(12.dp),
+        verticalAlignment = Alignment.CenterVertically
+    ) {
+        Icon(
+            Icons.Default.AutoAwesome,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.primary,
+            modifier = Modifier.width(32.dp).size(22.dp)
+        )
+        Spacer(Modifier.width(12.dp))
+        Column(Modifier.weight(1f), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+            Text(
+                stringResource(R.string.mbti_title),
+                style = MaterialTheme.typography.titleSmall,
+                fontWeight = FontWeight.SemiBold
+            )
+            Text(
+                stringResource(R.string.mbti_subtitle),
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant,
+                maxLines = 2,
+                overflow = androidx.compose.ui.text.style.TextOverflow.Ellipsis
+            )
+        }
+        Spacer(Modifier.width(8.dp))
+        Icon(
+            Icons.AutoMirrored.Filled.KeyboardArrowRight,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.outline
+        )
     }
 }
 

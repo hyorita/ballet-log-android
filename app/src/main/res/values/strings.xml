@@ -266,4 +266,8 @@
     <string name="music_suggest_disney">Disney</string>
     <string name="music_suggest_chopin">Chopin</string>
     <string name="music_suggest_improvised">Improvised</string>
+    <!-- 1.16.1 ballet-persona web quiz — wording from iOS Localizable.xcstrings -->
+    <string name="mbti_title">Find My Ballet Persona</string>
+    <string name="mbti_subtitle">An 8-question quiz for your ballet class style — see which of 16 personas you are.</string>
+    <string name="mbti_new_badge">New</string>
 </resources>

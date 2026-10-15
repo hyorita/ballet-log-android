@@ -25,8 +25,8 @@ android {
         applicationId = "com.hyorita.balletlog"
         minSdk = 26
         targetSdk = 36
-        versionCode = 17
-        versionName = "1.16"
+        versionCode = 18
+        versionName = "1.16.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
     }
@@ -110,6 +110,9 @@ dependencies {
 
     // Capturable (Compose screenshot)
     implementation("dev.shreyaspatil:capturable:2.1.0")
+
+    // Custom Tabs (1.16.1: in-app browser for the ballet-persona web quiz)
+    implementation("androidx.browser:browser:1.8.0")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -14,6 +14,7 @@ import android.content.Intent
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.KeyboardArrowRight
 import androidx.compose.material.icons.automirrored.filled.OpenInNew
+import androidx.compose.material.icons.filled.AutoAwesome
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.Download
 import androidx.compose.material.icons.filled.Favorite
@@ -31,12 +32,15 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardCapitalization
 import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
 import com.hyorita.balletlog.R
 import com.hyorita.balletlog.data.BackupManager
 import com.hyorita.balletlog.data.HealthConnectManager
+import com.hyorita.balletlog.data.MbtiPreferences
 import com.hyorita.balletlog.data.ProfilePreferences
 import com.hyorita.balletlog.data.TermLanguage
 import com.hyorita.balletlog.data.TermLanguagePreferences
+import com.hyorita.balletlog.ui.common.openInAppBrowser
 import com.hyorita.balletlog.util.debugLog
 import androidx.health.connect.client.PermissionController
 import kotlinx.coroutines.launch
@@ -44,7 +48,10 @@ import kotlinx.coroutines.launch
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
-    onDismiss: () -> Unit
+    onDismiss: () -> Unit,
+    // 1.16.1: snapshot taken by the Log tab before its gear tap cleared the
+    // dot — reading the live flag here would already see it cleared.
+    showMbtiBadge: Boolean = false
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
@@ -138,6 +145,30 @@ fun SettingsScreen(
             contentPadding = PaddingValues(vertical = 8.dp),
             verticalArrangement = Arrangement.spacedBy(20.dp)
         ) {
+            // 1.16.1: ballet-persona web quiz — top of the list, as on iOS
+            item {
+                Card(
+                    modifier = Modifier.fillMaxWidth().padding(horizontal = 16.dp),
+                    shape = RoundedCornerShape(14.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
+                ) {
+                    SettingsRow(
+                        icon = Icons.Default.AutoAwesome,
+                        title = stringResource(R.string.mbti_title),
+                        enabled = true,
+                        badge = if (showMbtiBadge) stringResource(R.string.mbti_new_badge) else null,
+                        onClick = { openInAppBrowser(context, MbtiPreferences.QUIZ_URL) }
+                    )
+                }
+                Text(
+                    stringResource(R.string.mbti_subtitle),
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    modifier = Modifier.padding(horizontal = 20.dp, vertical = 8.dp)
+                )
+            }
+
             // Profile
             item {
                 SectionHeader(stringResource(R.string.settings_profile))
@@ -476,6 +507,7 @@ private fun SettingsRow(
     icon: ImageVector,
     title: String,
     enabled: Boolean,
+    badge: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -502,8 +534,22 @@ private fun SettingsRow(
                 MaterialTheme.colorScheme.onSurface
             else
                 MaterialTheme.colorScheme.outline,
-            modifier = Modifier.weight(1f)
+            modifier = Modifier.weight(1f, fill = badge == null)
         )
+        if (badge != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                badge,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 7.dp, vertical = 3.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+            Spacer(Modifier.weight(1f))
+        }
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
