@@ -63,7 +63,15 @@ iOS `Localizable.xcstrings` 그대로: `mbti_title` · `mbti_subtitle` · `mbti_
 - [x] 설정 행 + New 캡슐 / Log 배너 / 톱니 빨간 점
 - [x] EN/KO/JA 문자열
 - [x] 빌드 · 기존 단위 테스트 40건 통과
-- [ ] 실기기 (기기 미연결): 배너 위치·스크롤·첫 오픈 후 사라짐 / 빨간 점 → 설정 New 캡슐
-      → 재진입 시 둘 다 없음 / Custom Tab 열림·뒤로 복귀 / 결과 화면 아트 스타일 전부 열림
-      (`x7h` 전달 확인) / 다크 모드
+- [x] 실기기 (2026-10-15, SM-S926N / Android 16, debug, 기록 있는 앱): 배너가 태그 필터 위 ·
+      톱니 빨간 점 → 설정 `New` 캡슐(설정을 연 동안 유지) → 닫으면 점 없음 · 설정 행 →
+      Custom Tab(`CustomTabActivity`) 열림 · 뒤로 복귀 · 배너 탭 → 퀴즈 열림 → 복귀 시 배너 사라짐
+      (`hasDismissedMbtiBanner=true`). 설정에서 연 것으로는 배너가 안 사라짐(iOS와 동일)
+- [x] **확인 중 수정**: 설정 행 제목이 `내 발레 / 페르소나 찾기` 두 줄로 꺾임 — 제목과 빈 칸이
+      weight를 반씩 나눠 가짐. 제목+캡슐을 안쪽 Row로 묶어 제목이 캡슐 뺀 나머지를 전부 쓰게 함
+- [x] `x7h` 전달 — 웹 `middleware.js`가 en/ja/zh 브라우저를 `/mbti/<locale>`로 307
+      리다이렉트하는데 쿼리를 보존함(`curl`로 `location: /mbti/en?x7h=8aq6brde1s` 확인).
+      ko는 리다이렉트 없이 `/mbti` 그대로. 결과 화면까지 직접 풀어보진 않음
+- [ ] 새 설치(기록 0) 시 점·캡슐 안 뜨는 경로 — 1.16 Stats와 같은 코드라 실기기 미확인
+- [ ] 다크 모드
 - [ ] PLAY-CONSOLE-1.16.1.md

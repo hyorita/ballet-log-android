@@ -527,28 +527,32 @@ private fun SettingsRow(
             modifier = Modifier.size(22.dp)
         )
         Spacer(Modifier.width(14.dp))
-        Text(
-            title,
-            style = MaterialTheme.typography.bodyLarge,
-            color = if (enabled)
-                MaterialTheme.colorScheme.onSurface
-            else
-                MaterialTheme.colorScheme.outline,
-            modifier = Modifier.weight(1f, fill = badge == null)
-        )
-        if (badge != null) {
-            Spacer(Modifier.width(8.dp))
+        // Title and the optional pill share the middle. The pill is measured
+        // first, the title gets everything left (fill = false keeps the pill
+        // right after the text instead of pushed to the chevron).
+        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
             Text(
-                badge,
-                modifier = Modifier
-                    .clip(RoundedCornerShape(50))
-                    .background(MaterialTheme.colorScheme.primary)
-                    .padding(horizontal = 7.dp, vertical = 3.dp),
-                color = MaterialTheme.colorScheme.onPrimary,
-                fontSize = 11.sp,
-                fontWeight = FontWeight.Bold
+                title,
+                style = MaterialTheme.typography.bodyLarge,
+                color = if (enabled)
+                    MaterialTheme.colorScheme.onSurface
+                else
+                    MaterialTheme.colorScheme.outline,
+                modifier = Modifier.weight(1f, fill = false)
             )
-            Spacer(Modifier.weight(1f))
+            if (badge != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    badge,
+                    modifier = Modifier
+                        .clip(RoundedCornerShape(50))
+                        .background(MaterialTheme.colorScheme.primary)
+                        .padding(horizontal = 7.dp, vertical = 3.dp),
+                    color = MaterialTheme.colorScheme.onPrimary,
+                    fontSize = 11.sp,
+                    fontWeight = FontWeight.Bold
+                )
+            }
         }
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
