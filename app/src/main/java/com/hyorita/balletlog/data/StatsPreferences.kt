@@ -1,7 +1,6 @@
 package com.hyorita.balletlog.data
 
 import android.content.Context
-import com.hyorita.balletlog.data.db.BalletLogDatabase
 
 /**
  * 1.16 Stats tab "New" badge. Mirrors iOS `@AppStorage "statsLastSeenVersion"`.
@@ -22,19 +21,13 @@ object StatsPreferences {
      * Shown only to people who already had records before this version — a
      * brand-new user shouldn't see "New" on a tab they've never known any
      * other way. An install with no records yet is marked seen on the spot,
-     * so the badge can't appear later once they start logging.
-     *
-     * iOS gates on `hasSeenLogTutorial` instead. That flag flips on the Log
-     * tab's `+`, not on having data: a user who restored a backup, or only
-     * ever used the Class tab, never gets it, and a new user gets it on their
-     * first tap. Record count is the thing the flag was standing in for.
+     * so the badge can't appear later once they start logging. See
+     * [hasAnyRecords] for why records rather than a tutorial flag (iOS made
+     * the same switch in 1.16 build 3).
      */
     suspend fun hasNewStats(context: Context): Boolean {
         if (lastSeenVersion(context) >= FEATURE_VERSION) return false
-        val db = BalletLogDatabase.getInstance(context)
-        val hasRecords = db.classLogDao().count() > 0 ||
-            db.photoLogDao().count() > 0 ||
-            db.noteDao().count() > 0
+        val hasRecords = hasAnyRecords(context)
         if (!hasRecords) markSeen(context)
         return hasRecords
     }

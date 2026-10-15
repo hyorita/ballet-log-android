@@ -266,4 +266,8 @@
     <string name="music_suggest_disney">ディズニー</string>
     <string name="music_suggest_chopin">ショパン</string>
     <string name="music_suggest_improvised">即興演奏</string>
+    <!-- 1.16.1 ballet-persona web quiz — wording from iOS Localizable.xcstrings -->
+    <string name="mbti_title">私のバレエペルソナ診断</string>
+    <string name="mbti_subtitle">8つの質問でわかるバレエクラスの傾向 — 16種類のバレエペルソナ、あなたはどのタイプ？</string>
+    <string name="mbti_new_badge">新着</string>
 </resources>
