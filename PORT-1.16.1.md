@@ -74,4 +74,4 @@ iOS `Localizable.xcstrings` 그대로: `mbti_title` · `mbti_subtitle` · `mbti_
       ko는 리다이렉트 없이 `/mbti` 그대로. 결과 화면까지 직접 풀어보진 않음
 - [ ] 새 설치(기록 0) 시 점·캡슐 안 뜨는 경로 — 1.16 Stats와 같은 코드라 실기기 미확인
 - [ ] 다크 모드
-- [ ] PLAY-CONSOLE-1.16.1.md
+- [x] PLAY-CONSOLE-1.16.1.md
