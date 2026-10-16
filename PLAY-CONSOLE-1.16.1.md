@@ -13,8 +13,8 @@ versionCode 18 / versionName 1.16.1
 iOS 1.16.1 동기화. balletclass.cc **"내 발레 페르소나 찾기"** 웹 퀴즈 진입점 —
 설정 맨 위 행 · Log 탭 배너(첫 오픈 후 사라짐) · 기존 사용자용 New 표시.
 
-> ⚠️ **동시 출시 예정.** iOS 1.16.1 (build 1)은 이 글 작성 시점(2026-10-15) 기준 로컬
-> `main` 커밋만 완료, App Store 심사 제출 전. iOS 승인 후 업로드할 것.
+> ✅ **2026-10-16 출시 — App Store(1.16.1 build 1) · Google Play · 원스토어 라이브.**
+> 태그 `v1.16.1` = merge `6d07cce` (출시 AAB/APK를 빌드한 코드).
 
 ---
 
@@ -70,10 +70,10 @@ iOS 1.16.1 동기화. balletclass.cc **"내 발레 페르소나 찾기"** 웹 �
 
 ## 출시 전 확인
 
-- [ ] **iOS 1.16.1이 App Store 심사를 통과했는지** — 통과 전엔 Android도 올리지 않는다(동시 출시 합의)
-- [ ] release AAB/APK 빌드 (위 명령, 버전 bump 후 반드시 새로 빌드)
-- [ ] 개인정보처리방침 URL — 변경 없음
-- [ ] 데이터 세이프티 섹션 — 변경 없음 (앱이 새로 수집하는 데이터 없음)
+- [x] **iOS 1.16.1이 App Store 심사를 통과했는지** — 승인, 2026-10-16 App Store · Google Play · 원스토어 라이브
+- [x] release AAB/APK 빌드 — 2026-10-15 16:08, versionCode 18 확인
+- [x] 개인정보처리방침 URL — 변경 없음
+- [x] 데이터 세이프티 섹션 — 변경 없음 (앱이 새로 수집하는 데이터 없음)
 
 > versionCode 18은 어떤 트랙에든 업로드되는 순간 영구 점유됨. 버그 발견 시 1.16.2
 > (versionCode 19)로 bump.

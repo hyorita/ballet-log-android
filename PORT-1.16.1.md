@@ -55,6 +55,9 @@ iOS `Localizable.xcstrings` 그대로: `mbti_title` · `mbti_subtitle` · `mbti_
 
 ## 상태
 
+**2026-10-16 출시** (App Store · Google Play · 원스토어). 태그 `v1.16.1` = `6d07cce`.
+
+
 - [x] `dev/1.16.1` 브랜치
 - [x] versionCode 18 / versionName 1.16.1
 - [x] 카탈로그 시드 — iOS와 바이트 동일 확인 (변경 없음, v11)
