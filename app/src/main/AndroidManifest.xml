@@ -46,12 +46,8 @@
 
         <activity
             android:name=".SplashActivity"
-            android:exported="true"
+            android:exported="false"
             android:theme="@style/Theme.BalletLog">
-            <intent-filter>
-                <action android:name="android.intent.action.MAIN" />
-                <category android:name="android.intent.category.LAUNCHER" />
-            </intent-filter>
         </activity>
 
         <activity
@@ -61,6 +57,34 @@
             android:theme="@style/Theme.BalletLog"
             android:windowSoftInputMode="adjustResize">
         </activity>
+
+        <!-- 할로윈 한정 아이콘: SeasonalAppIcon이 10/29-31에만 Halloween 쪽을 켜고 끔.
+             기본은 Default가 켜져있고 Halloween은 꺼져있는 상태. -->
+        <activity-alias
+            android:name=".icon.LauncherDefault"
+            android:enabled="true"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher"
+            android:roundIcon="@mipmap/ic_launcher_round"
+            android:targetActivity=".SplashActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
+
+        <activity-alias
+            android:name=".icon.LauncherHalloween"
+            android:enabled="false"
+            android:exported="true"
+            android:icon="@mipmap/ic_launcher_halloween"
+            android:roundIcon="@mipmap/ic_launcher_halloween_round"
+            android:targetActivity=".SplashActivity">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity-alias>
 
         <!-- Health Connect 퍼미션 선언 -->
         <activity-alias

@@ -36,6 +36,7 @@ import com.hyorita.balletlog.data.StatsPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
 import com.hyorita.balletlog.data.HealthConnectManager
 import com.hyorita.balletlog.data.db.BalletLogDatabase
+import com.hyorita.balletlog.util.SeasonalAppIcon
 import com.hyorita.balletlog.util.debugLog
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
@@ -110,6 +111,8 @@ class MainActivity : ComponentActivity() {
         // "app came back to foreground" moment iOS's scenePhase == .active
         // fires on. CatalogRepository.load() self-throttles the actual network
         // hit to once/hour, so it's cheap to call on every foreground.
+        SeasonalAppIcon.applyIfNeeded(this)
+
         val now = System.currentTimeMillis()
         if (now - lastAutoImportAt < 60_000L) return
         lastAutoImportAt = now
