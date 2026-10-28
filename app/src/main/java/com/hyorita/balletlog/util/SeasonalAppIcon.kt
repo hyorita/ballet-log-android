@@ -6,11 +6,16 @@ import android.content.pm.PackageManager
 import java.util.Calendar
 
 /**
- * Switches to the Halloween launcher icon for Oct 29–31, back to the default
- * icon outside that window. Both activity-aliases ship inside every build
- * once this lands — toggling which one is enabled is a local PackageManager
+ * Switches to the Halloween launcher icon for Oct 25–31 (same window as
+ * CatalogRepository's halloween music boost), back to the default icon
+ * outside that window. Both activity-aliases ship inside every build once
+ * this lands — toggling which one is enabled is a local PackageManager
  * call, not a new Play Store submission, so returning to the default icon on
  * November 1st needs no further review.
+ *
+ * 1.16.2 shipped with a narrower Oct 29–31 window (submitted late in the
+ * season); widened to match the music boost starting with the next release
+ * so next Halloween gets the full week.
  *
  * Unlike iOS, Android shows no "icon changed" system alert, so there's no
  * need to dedupe the call against the current state the way iOS's
@@ -23,7 +28,7 @@ object SeasonalAppIcon {
     private const val HALLOWEEN_ALIAS = "com.hyorita.balletlog.icon.LauncherHalloween"
 
     private fun isHalloweenWindow(calendar: Calendar): Boolean =
-        calendar.get(Calendar.MONTH) + 1 == 10 && calendar.get(Calendar.DAY_OF_MONTH) >= 29
+        calendar.get(Calendar.MONTH) + 1 == 10 && calendar.get(Calendar.DAY_OF_MONTH) >= 25
 
     fun applyIfNeeded(context: Context, calendar: Calendar = Calendar.getInstance()) {
         val pm = context.packageManager
