@@ -81,6 +81,35 @@ class MusicCatalogTest {
         }
     }
 
+    /**
+     * Halloween albums are otherwise only ~1.6% of October's pool, easy to
+     * never land on. The boosted week (Oct 25-31) should land on one often
+     * enough to actually register — pinned to the exact two days the real
+     * seed produces so a silently-broken boost (e.g. weight reset to 1,
+     * or the date window drifting) fails this test instead of just quietly
+     * doing nothing.
+     */
+    @Test
+    fun `halloween albums are boosted during the last week of October`() {
+        val halloweenDays = (25..31).count { d ->
+            val album = CatalogRepository.discoveryFrom(seed, day("2026-10-%02d".format(d)))
+            album?.themes?.contains("halloween") == true
+        }
+        assertEquals(2, halloweenDays)
+
+        // Outside the boosted window, back to the ~1.6% baseline — no
+        // halloween picks across the rest of the eligible month.
+        val unboostedHalloweenDays = (1..24).count { d ->
+            val album = CatalogRepository.discoveryFrom(seed, day("2026-10-%02d".format(d)))
+            album?.themes?.contains("halloween") == true
+        }
+        assertEquals(0, unboostedHalloweenDays)
+
+        // The day right after Halloween drops straight back to no boost at all.
+        val novFirst = CatalogRepository.discoveryFrom(seed, day("2026-11-01"))
+        assertTrue(novFirst?.themes?.contains("halloween") != true)
+    }
+
     @Test
     fun `seasonal albums only enter the discovery pool in season`() {
         val christmas = CatalogAlbum(themes = listOf("christmas"))

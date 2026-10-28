@@ -179,18 +179,35 @@ object CatalogRepository {
 
     internal fun discoveryFrom(catalog: MusicCatalog, date: Date): CatalogAlbum? {
         val tier1 = catalog.artists.filter { it.tier == 1 }.map { it.id }.toHashSet()
-        // Local calendar month, not UTC — matches iOS's Calendar.current, even
+        // Local calendar, not UTC — matches iOS's Calendar.current, even
         // though the day-seed key just below stays UTC. Keep that mismatch: both
         // platforms need to land on the identical album on the identical day.
-        val month = Calendar.getInstance().apply { time = date }.get(Calendar.MONTH) + 1
-        val pool = catalog.albums
+        val calendar = Calendar.getInstance().apply { time = date }
+        val month = calendar.get(Calendar.MONTH) + 1
+        val eligible = catalog.albums
             // Singles are a poor thing to open the tab with — one track shows
             // nothing about how someone plays a class.
             .filter { it.artistId in tier1 && it.artwork.isNotEmpty() && it.trackCount >= 5 }
             .filter { it.excludeFromDiscovery != true }
             .filter { isInSeason(it, month) }
             .sortedBy { it.id }          // stable ordering across launches
-        if (pool.isEmpty()) return null
+        if (eligible.isEmpty()) return null
+
+        // Halloween albums are otherwise only ~1.6% of October's pool — at
+        // that rate a user could go the whole month without seeing one. The
+        // last 7 days before the 31st repeat each halloween album as extra
+        // entries instead, so a pick lands on roughly 2-3 of those 7 days
+        // (not every day — the rest of the catalogue still gets a turn too).
+        // Mirrors iOS's CatalogService.discovery(for:) — same boost weight,
+        // same 25th cutoff, so both platforms keep landing on the same album
+        // on the same day even during the boosted week.
+        val pool = if (isHalloweenWeek(calendar)) {
+            eligible.flatMap { album ->
+                if (album.themes.contains("halloween")) List(halloweenBoostWeight) { album } else listOf(album)
+            }
+        } else {
+            eligible
+        }
 
         val key = dayFormatter.format(date)
         return pool[(stableHash(key) % pool.size.toULong()).toInt()]
@@ -202,6 +219,18 @@ object CatalogRepository {
         album.themes.contains("halloween") -> month == 10
         else -> true
     }
+
+    /** October 25th through the 31st. */
+    internal fun isHalloweenWeek(calendar: Calendar): Boolean =
+        calendar.get(Calendar.MONTH) + 1 == 10 && calendar.get(Calendar.DAY_OF_MONTH) >= 25
+
+    /**
+     * Extra pool entries per eligible halloween album during that week —
+     * tuned against the live catalogue (9 eligible halloween albums vs.
+     * ~559 others) to land around a 40% daily share. Revisit this number if
+     * the catalogue's size or halloween-album count shifts a lot.
+     */
+    internal const val halloweenBoostWeight = 40
 
     private val dayFormatter: SimpleDateFormat
         get() = SimpleDateFormat("yyyy-MM-dd", Locale.US).apply {
