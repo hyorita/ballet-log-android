@@ -1,10 +1,15 @@
 # Ballet Log 1.16.2 — 업로드 자료
 
-versionCode 19 / versionName 1.16.2
+versionName 1.16.2. **원스토어와 Play Store가 versionCode가 다름** (아래 참고):
 
-빌드 산출물:
-- 원스토어: `app/build/outputs/apk/release/BalletLog-1.16.2.apk`
-- Play Store: `app/build/outputs/bundle/release/app-release.aab`
+- 원스토어 (APK): versionCode 20 — `app/build/outputs/apk/release/BalletLog-1.16.2.apk`
+  (2026-10-29 재빌드, 할로윈 아이콘 창 10/25~31로 넓힌 커밋 `63902f2` 포함)
+- Play Store (AAB): versionCode 19 — `app/build/outputs/bundle/release/app-release.aab`
+  (2026-10-28 빌드, 아이콘 창은 원래의 10/29~31 그대로. 재빌드 전이라 `63902f2` 미포함)
+
+> Play Store AAB도 동일하게 재빌드하려면 소스가 이미 versionCode 20인 상태이므로
+> `./gradlew :app:bundleRelease`만 다시 돌리면 됨 — 이 경우 두 스토어 versionCode가
+> 다시 맞춰짐 (둘 다 20, 둘 다 `63902f2` 포함).
 
 ```bash
 ./gradlew :app:assembleRelease :app:bundleRelease   # APK·AAB 같은 시점에 같이
@@ -60,12 +65,13 @@ iOS 1.16.2 동기화. 할로윈 한정 앱 아이콘 — 10/29~10/31에만 자�
 ## 출시 전 확인
 
 - [x] **iOS 1.16.2가 App Store 심사를 통과했는지** — 확인 필요 (iOS는 당일 승인 전례)
-- [x] release AAB/APK 빌드 — 2026-10-28 16:32, versionCode 19 확인
+- [x] release APK 빌드 (원스토어) — 2026-10-29 16:55, versionCode 20 확인
+- [x] release AAB 빌드 (Play Store) — 2026-10-28 16:32, versionCode 19 확인 (재빌드 전)
 - [x] 개인정보처리방침 URL — 변경 없음
 - [x] 데이터 세이프티 섹션 — 변경 없음 (앱이 새로 수집하는 데이터 없음)
 
-> versionCode 19는 어떤 트랙에든 업로드되는 순간 영구 점유됨. 이후 버그 발견 시 1.16.3
-> (versionCode 20)으로 bump.
+> versionCode는 어떤 트랙에든 업로드되는 순간 그 번호가 영구 점유됨. 이후 버그 발견 시
+> 1.16.3 (versionCode 21)으로 bump.
 
 > 할로윈 윈도우(10/29~31)가 이미 진행 중이므로, 업로드→심사→배포가 늦어질수록 실제로
 > 할로윈 아이콘을 보는 사용자가 줄어듦 (11/1부턴 평소 아이콘으로 자동 복귀).
@@ -75,7 +81,7 @@ iOS 1.16.2 동기화. 할로윈 한정 앱 아이콘 — 10/29~10/31에만 자�
 ## 원스토어 업로드 절차
 
 1. 원스토어 개발자 센터 → 앱 관리 → Ballet Log → 새 버전 등록
-2. APK 업로드: `BalletLog-1.16.2.apk` (versionCode 19)
+2. APK 업로드: `BalletLog-1.16.2.apk` (versionCode 20)
 3. 위 "1.16.2 Release Notes" 한국어 텍스트 붙여넣기
 4. 심사 제출
 
