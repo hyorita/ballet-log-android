@@ -52,10 +52,20 @@
 
         <activity
             android:name=".MainActivity"
-            android:exported="false"
+            android:exported="true"
             android:label="@string/app_name"
             android:theme="@style/Theme.BalletLog"
             android:windowSoftInputMode="adjustResize">
+            <!-- balletlog://persona?type=...&name=... — the web quiz result page
+                 hands its result back to the app this way. Skips SplashActivity
+                 on purpose: a deep-link open is as fast as a plain app switch,
+                 not a cold app launch. -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+                <data android:scheme="balletlog" android:host="persona" />
+            </intent-filter>
         </activity>
 
         <!-- 할로윈 한정 아이콘: SeasonalAppIcon이 10/29-31에만 Halloween 쪽을 켜고 끔.

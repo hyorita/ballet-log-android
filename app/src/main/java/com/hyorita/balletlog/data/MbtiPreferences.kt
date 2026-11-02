@@ -1,6 +1,7 @@
 package com.hyorita.balletlog.data
 
 import android.content.Context
+import android.net.Uri
 
 /**
  * 1.16.1 "Find My Ballet Persona" — the balletclass.cc web quiz, opened from
@@ -23,6 +24,29 @@ object MbtiPreferences {
     private const val PREFS = "balletlog_mbti"
     private const val KEY_LAST_SEEN_VERSION = "mbtiLinkLastSeenVersion"
     private const val KEY_BANNER_DISMISSED = "hasDismissedMbtiBanner"
+    private const val KEY_PERSONA_TYPE = "personaType"
+    private const val KEY_PERSONA_NAME = "personaName"
+
+    /**
+     * The quiz result handed back from `balletlog://persona?type=...&name=...`
+     * (the web result page's "Save to app" button, shown only to visitors who
+     * came from the app). `type` is the stable 4-letter MBTI code; `name` is
+     * whatever locale the visitor read the quiz in — we don't keep our own
+     * translated copy of all 16 persona names, the web's `lib/mbti/data.js`
+     * stays the one source of truth for that text. Mirrors iOS `PersonaLink`.
+     */
+    fun handlePersonaLink(context: Context, uri: Uri) {
+        if (uri.scheme != "balletlog" || uri.host != "persona") return
+        val type = uri.getQueryParameter("type")?.takeIf { it.isNotEmpty() } ?: return
+        val name = uri.getQueryParameter("name") ?: ""
+        prefs(context).edit()
+            .putString(KEY_PERSONA_TYPE, type)
+            .putString(KEY_PERSONA_NAME, name)
+            .apply()
+    }
+
+    fun personaName(context: Context): String =
+        prefs(context).getString(KEY_PERSONA_NAME, "") ?: ""
 
     /**
      * The red dot on the Log tab's gear and the "New" pill in Settings — same

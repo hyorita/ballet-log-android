@@ -55,6 +55,7 @@ fun SettingsScreen(
 ) {
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
+    val personaName = remember { MbtiPreferences.personaName(context) }
     var instagramId by remember { mutableStateOf(ProfilePreferences.getInstagramId(context)) }
     var termLanguage by remember { mutableStateOf(TermLanguagePreferences.get(context)) }
     var isWorking by remember { mutableStateOf(false) }
@@ -158,6 +159,7 @@ fun SettingsScreen(
                         title = stringResource(R.string.mbti_title),
                         enabled = true,
                         badge = if (showMbtiBadge) stringResource(R.string.mbti_new_badge) else null,
+                        trailingText = personaName.ifEmpty { null },
                         onClick = { openInAppBrowser(context, MbtiPreferences.QUIZ_URL) }
                     )
                 }
@@ -508,6 +510,7 @@ private fun SettingsRow(
     title: String,
     enabled: Boolean,
     badge: String? = null,
+    trailingText: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -540,7 +543,17 @@ private fun SettingsRow(
                     MaterialTheme.colorScheme.outline,
                 modifier = Modifier.weight(1f, fill = false)
             )
-            if (badge != null) {
+            // A saved result takes priority over the "New" pill — once
+            // someone's taken the quiz, the "hey, try this" prompt is moot.
+            if (trailingText != null) {
+                Spacer(Modifier.width(8.dp))
+                Text(
+                    trailingText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    maxLines = 1
+                )
+            } else if (badge != null) {
                 Spacer(Modifier.width(8.dp))
                 Text(
                     badge,

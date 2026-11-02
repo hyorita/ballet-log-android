@@ -31,6 +31,7 @@ import androidx.lifecycle.lifecycleScope
 import androidx.compose.ui.platform.LocalContext
 import com.hyorita.balletlog.data.BackfillPreferences
 import com.hyorita.balletlog.data.CatalogRepository
+import com.hyorita.balletlog.data.MbtiPreferences
 import com.hyorita.balletlog.data.MusicPreferences
 import com.hyorita.balletlog.data.StatsPreferences
 import com.hyorita.balletlog.data.HealthConnectAutoImport
@@ -93,6 +94,9 @@ class MainActivity : ComponentActivity() {
         if (HealthConnectClient.getSdkStatus(this) == HealthConnectClient.SDK_AVAILABLE) {
             requestPermissions.launch(HealthConnectManager.permissions)
         }
+
+        // balletlog://persona?type=...&name=... from the web quiz result page.
+        intent?.data?.let { MbtiPreferences.handlePersonaLink(this, it) }
 
         setContent {
             BalletLogTheme {
