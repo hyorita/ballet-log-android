@@ -324,6 +324,34 @@ internal fun monthLetter(monthStart: Long, locale: Locale): String {
 
 // endregion
 
+// region Previous-period comparison
+
+/**
+ * Plain, locale-agnostic delta text ("+9", "−10%") for the metrics card — iOS
+ * `comparisonCaption`'s value half. The period-specific "vs last X" wrapper
+ * (translatable, word-order varies by locale) is applied by the caller.
+ *
+ * nil when there's no meaningful baseline: both periods empty, no change, or
+ * (percent only) the previous period was empty — a % against zero isn't a
+ * real number, same reasoning [EMPTY_METRIC] uses for showing "—" instead of
+ * "0".
+ */
+internal fun comparisonValueText(current: Int, previous: Int, asPercent: Boolean): String? {
+    if (current == 0 && previous == 0) return null
+    return if (asPercent) {
+        if (previous <= 0) return null
+        val change = ((current - previous).toDouble() / previous * 100).roundToLong().toInt()
+        if (change == 0) return null
+        "${if (change > 0) "+" else "−"}${kotlin.math.abs(change)}%"
+    } else {
+        val change = current - previous
+        if (change == 0) return null
+        "${if (change > 0) "+" else "−"}${kotlin.math.abs(change)}"
+    }
+}
+
+// endregion
+
 // region Metric formatting
 
 /** Big number + small unit, or a quiet "—" when there's genuinely no data. */

@@ -220,6 +220,11 @@
     <string name="stats_avg_week">avg %1$d min</string>
     <string name="stats_avg_month">avg %1$s / wk</string>
     <string name="stats_avg_year">avg %1$s / mo</string>
+    <!-- Metrics card comparison caption, e.g. "+2 vs last week" or "−10% vs last week".
+         %1$s is the signed delta, already including a +/− sign and an optional %. -->
+    <string name="stats_vs_last_week">%1$s vs last week</string>
+    <string name="stats_vs_last_month">%1$s vs last month</string>
+    <string name="stats_vs_last_year">%1$s vs last year</string>
     <string name="stats_streak_current">Current streak</string>
     <string name="stats_streak_longest">Longest</string>
     <string name="stats_streak_total">Total</string>

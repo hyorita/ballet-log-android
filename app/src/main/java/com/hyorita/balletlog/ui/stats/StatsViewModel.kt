@@ -29,6 +29,12 @@ internal data class StatsUiState(
     val totalClasses: Int = 0,
     val totalMinutes: Int = 0,
     val totalCalories: Int = 0,
+    // Plain delta text ("+9", "−10%") vs the immediately preceding period of
+    // the same kind — nil when there's no baseline to compare against. The
+    // period-specific "vs last X" wrapper is applied where this is shown.
+    val classesComparisonValue: String? = null,
+    val workoutTimeComparisonValue: String? = null,
+    val activeEnergyComparisonValue: String? = null,
     val hardest: StatItem? = null,
     val bars: List<ChartBar> = emptyList(),
     val elapsed: Int = 0,
@@ -88,6 +94,17 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
         val sessions = workoutSessions(periodLogs, periodPhotos)
         val bars = chartBars(period, start, events, sessions, locale)
 
+        // Same-length period immediately before this one — equivalent to
+        // offset - 1's range, computed directly rather than depending on
+        // mutating periodOffset.
+        val (prevStart, prevEnd) = computeRange(period, offset - 1, now)
+        val prevLogs = logs.filter { it.date in prevStart until prevEnd }
+        val prevPhotos = photos.filter { it.date in prevStart until prevEnd }
+        val prevSessions = workoutSessions(prevLogs, prevPhotos)
+        val previousClasses = classEvents(prevLogs, prevPhotos).size
+        val previousMinutes = prevSessions.sumOf { it.durationMinutes }
+        val previousCalories = prevSessions.sumOf { it.activeCalories }
+
         // Streak reads all history, independent of the period being browsed.
         val classDays = classEvents(logs, photos).mapTo(HashSet()) { dayKey(it.date) }
         val streak = computeStreak(classDays, now)
@@ -109,6 +126,13 @@ class StatsViewModel(app: Application) : AndroidViewModel(app) {
             totalClasses = events.size,
             totalMinutes = sessions.sumOf { it.durationMinutes },
             totalCalories = sessions.sumOf { it.activeCalories },
+            classesComparisonValue = comparisonValueText(events.size, previousClasses, asPercent = false),
+            workoutTimeComparisonValue = comparisonValueText(
+                sessions.sumOf { it.durationMinutes }, previousMinutes, asPercent = true
+            ),
+            activeEnergyComparisonValue = comparisonValueText(
+                sessions.sumOf { it.activeCalories }, previousCalories, asPercent = true
+            ),
             hardest = hardestWorkout(periodLogs, periodPhotos),
             bars = bars,
             elapsed = chartElapsedCount(period, offset, start, bars.size, now),

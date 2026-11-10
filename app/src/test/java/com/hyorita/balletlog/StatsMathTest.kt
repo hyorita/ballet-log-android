@@ -9,6 +9,7 @@ import com.hyorita.balletlog.ui.stats.chartAverage
 import com.hyorita.balletlog.ui.stats.chartBars
 import com.hyorita.balletlog.ui.stats.chartElapsedCount
 import com.hyorita.balletlog.ui.stats.classEvents
+import com.hyorita.balletlog.ui.stats.comparisonValueText
 import com.hyorita.balletlog.ui.stats.computeStreak
 import com.hyorita.balletlog.ui.stats.dayKey
 import com.hyorita.balletlog.ui.stats.monthLetter
@@ -158,6 +159,43 @@ class StatsMathTest {
             PhotoLog.create(photoPath = "", tags = listOf("Studio B"))
         )
         assertEquals(listOf("Studio B" to 3, "Studio A" to 1), studioBreakdown(logs, photos))
+    }
+
+    // endregion
+
+    // region Previous-period comparison
+
+    @Test fun comparison_countDelta_positiveAndNegative() {
+        assertEquals("+2", comparisonValueText(5, 3, asPercent = false))
+        assertEquals("−2", comparisonValueText(3, 5, asPercent = false))
+    }
+
+    @Test fun comparison_bothZero_isNull() {
+        assertEquals(null, comparisonValueText(0, 0, asPercent = false))
+        assertEquals(null, comparisonValueText(0, 0, asPercent = true))
+    }
+
+    @Test fun comparison_noChange_isNull() {
+        assertEquals(null, comparisonValueText(3, 3, asPercent = false))
+        assertEquals(null, comparisonValueText(100, 100, asPercent = true))
+    }
+
+    @Test fun comparison_countDelta_fromOrToZero_stillShows() {
+        // A count delta from/to zero is still a real number — unlike percent,
+        // which has no baseline to divide by.
+        assertEquals("−5", comparisonValueText(0, 5, asPercent = false))
+        assertEquals("+5", comparisonValueText(5, 0, asPercent = false))
+    }
+
+    @Test fun comparison_percent_roundsAndSigns() {
+        assertEquals("+10%", comparisonValueText(110, 100, asPercent = true))
+        assertEquals("−10%", comparisonValueText(90, 100, asPercent = true))
+        assertEquals("−100%", comparisonValueText(0, 100, asPercent = true))
+    }
+
+    @Test fun comparison_percent_zeroBaseline_isNull() {
+        // No previous-period baseline to compute a percentage against.
+        assertEquals(null, comparisonValueText(100, 0, asPercent = true))
     }
 
     // endregion

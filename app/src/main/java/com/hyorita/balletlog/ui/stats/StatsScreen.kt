@@ -442,18 +442,28 @@ private fun MetricsCard(state: StatsUiState, onHardestTap: (() -> Unit)?) {
         hardest?.let { "$label · ${skeletonDate("Md", it.date, locale)}" } ?: label
     }
     val hairline = MaterialTheme.colorScheme.outlineVariant
+    val vsLastRes = when (state.period) {
+        StatsPeriod.WEEK -> R.string.stats_vs_last_week
+        StatsPeriod.MONTH -> R.string.stats_vs_last_month
+        StatsPeriod.YEAR -> R.string.stats_vs_last_year
+    }
+    val classesComparison = state.classesComparisonValue?.let { stringResource(vsLastRes, it) }
+    val workoutTimeComparison = state.workoutTimeComparisonValue?.let { stringResource(vsLastRes, it) }
+    val activeEnergyComparison = state.activeEnergyComparisonValue?.let { stringResource(vsLastRes, it) }
     StatsCard(padding = PaddingValues(0.dp)) {
         Row(Modifier.height(IntrinsicSize.Min)) {
             MetricCell(
                 MetricValue("${state.totalClasses}", null, false),
                 stringResource(R.string.stats_classes),
-                Modifier.weight(1f)
+                Modifier.weight(1f),
+                comparison = classesComparison
             )
             Box(Modifier.width(1.dp).fillMaxHeight().background(hairline))
             MetricCell(
                 workoutTimeValue(state.totalMinutes),
                 stringResource(R.string.stats_workout_time),
-                Modifier.weight(1f)
+                Modifier.weight(1f),
+                comparison = workoutTimeComparison
             )
         }
         Box(Modifier.fillMaxWidth().height(1.dp).background(hairline))
@@ -461,7 +471,8 @@ private fun MetricsCard(state: StatsUiState, onHardestTap: (() -> Unit)?) {
             MetricCell(
                 kcalValue(state.totalCalories, locale),
                 stringResource(R.string.stats_active_energy),
-                Modifier.weight(1f)
+                Modifier.weight(1f),
+                comparison = activeEnergyComparison
             )
             Box(Modifier.width(1.dp).fillMaxHeight().background(hairline))
             MetricCell(
@@ -476,7 +487,7 @@ private fun MetricsCard(state: StatsUiState, onHardestTap: (() -> Unit)?) {
 }
 
 @Composable
-private fun MetricCell(value: MetricValue, label: String, modifier: Modifier = Modifier) {
+private fun MetricCell(value: MetricValue, label: String, modifier: Modifier = Modifier, comparison: String? = null) {
     // Zero is a quiet "—", not a bold "0m" — an empty period isn't a data point.
     val quiet = MaterialTheme.colorScheme.onSurface.copy(alpha = 0.3f)
     Column(
@@ -504,6 +515,17 @@ private fun MetricCell(value: MetricValue, label: String, modifier: Modifier = M
             }
         }
         Text(label, fontSize = 15.sp, color = secondaryColor(), maxLines = 1, overflow = TextOverflow.Ellipsis)
+        // Quiet caption, not a colored up/down arrow — matches this card's
+        // weight/tone-over-color convention rather than a new semantic color.
+        if (comparison != null) {
+            Text(
+                comparison,
+                fontSize = 12.sp,
+                color = quiet,
+                maxLines = 1,
+                style = TextStyle(fontFeatureSettings = "tnum")
+            )
+        }
     }
 }
 

@@ -220,6 +220,9 @@
     <string name="stats_avg_week">平均%1$d分</string>
     <string name="stats_avg_month">週平均%1$s回</string>
     <string name="stats_avg_year">月平均%1$s回</string>
+    <string name="stats_vs_last_week">先週比 %1$s</string>
+    <string name="stats_vs_last_month">先月比 %1$s</string>
+    <string name="stats_vs_last_year">前年比 %1$s</string>
     <string name="stats_streak_current">現在の連続記録</string>
     <string name="stats_streak_longest">最長</string>
     <string name="stats_streak_total">合計</string>

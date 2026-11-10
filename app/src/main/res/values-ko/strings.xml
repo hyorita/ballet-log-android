@@ -220,6 +220,9 @@
     <string name="stats_avg_week">평균 %1$d분</string>
     <string name="stats_avg_month">주 평균 %1$s회</string>
     <string name="stats_avg_year">월 평균 %1$s회</string>
+    <string name="stats_vs_last_week">지난주 대비 %1$s</string>
+    <string name="stats_vs_last_month">지난달 대비 %1$s</string>
+    <string name="stats_vs_last_year">작년 대비 %1$s</string>
     <string name="stats_streak_current">현재 연속 기록</string>
     <string name="stats_streak_longest">최장</string>
     <string name="stats_streak_total">합계</string>
