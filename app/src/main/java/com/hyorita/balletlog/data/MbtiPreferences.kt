@@ -26,27 +26,37 @@ object MbtiPreferences {
     private const val KEY_BANNER_DISMISSED = "hasDismissedMbtiBanner"
     private const val KEY_PERSONA_TYPE = "personaType"
     private const val KEY_PERSONA_NAME = "personaName"
+    private const val KEY_PERSONA_IMAGE_URL = "personaImageUrl"
 
     /**
-     * The quiz result handed back from `balletlog://persona?type=...&name=...`
-     * (the web result page's "Save to app" button, shown only to visitors who
-     * came from the app). `type` is the stable 4-letter MBTI code; `name` is
-     * whatever locale the visitor read the quiz in — we don't keep our own
-     * translated copy of all 16 persona names, the web's `lib/mbti/data.js`
-     * stays the one source of truth for that text. Mirrors iOS `PersonaLink`.
+     * The quiz result handed back from
+     * `balletlog://persona?type=...&name=...&image=...` (the web result
+     * page's "Save to app" button, shown only to visitors who came from the
+     * app). `type` is the stable 4-letter MBTI code; `name` is whatever
+     * locale the visitor read the quiz in — we don't keep our own translated
+     * copy of all 16 persona names, the web's `lib/mbti/data.js` stays the
+     * one source of truth for that text. `image` is a plain https URL to
+     * whichever art style/variant was on screen when they tapped — loaded
+     * through Coil rather than keeping our own copy of the art. Mirrors iOS
+     * `PersonaLink`.
      */
     fun handlePersonaLink(context: Context, uri: Uri) {
         if (uri.scheme != "balletlog" || uri.host != "persona") return
         val type = uri.getQueryParameter("type")?.takeIf { it.isNotEmpty() } ?: return
         val name = uri.getQueryParameter("name") ?: ""
+        val imageUrl = uri.getQueryParameter("image") ?: ""
         prefs(context).edit()
             .putString(KEY_PERSONA_TYPE, type)
             .putString(KEY_PERSONA_NAME, name)
+            .putString(KEY_PERSONA_IMAGE_URL, imageUrl)
             .apply()
     }
 
     fun personaName(context: Context): String =
         prefs(context).getString(KEY_PERSONA_NAME, "") ?: ""
+
+    fun personaImageUrl(context: Context): String =
+        prefs(context).getString(KEY_PERSONA_IMAGE_URL, "") ?: ""
 
     /**
      * The red dot on the Log tab's gear and the "New" pill in Settings — same

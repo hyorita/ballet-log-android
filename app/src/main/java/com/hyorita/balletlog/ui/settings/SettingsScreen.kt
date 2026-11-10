@@ -7,6 +7,7 @@ import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicTextField
 import androidx.compose.foundation.text.KeyboardOptions
@@ -27,6 +28,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.SolidColor
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -43,6 +45,7 @@ import com.hyorita.balletlog.data.TermLanguagePreferences
 import com.hyorita.balletlog.ui.common.openInAppBrowser
 import com.hyorita.balletlog.util.debugLog
 import androidx.health.connect.client.PermissionController
+import coil.compose.AsyncImage
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -56,6 +59,7 @@ fun SettingsScreen(
     val context = LocalContext.current
     val scope = rememberCoroutineScope()
     val personaName = remember { MbtiPreferences.personaName(context) }
+    val personaImageUrl = remember { MbtiPreferences.personaImageUrl(context) }
     var instagramId by remember { mutableStateOf(ProfilePreferences.getInstagramId(context)) }
     var termLanguage by remember { mutableStateOf(TermLanguagePreferences.get(context)) }
     var isWorking by remember { mutableStateOf(false) }
@@ -159,7 +163,8 @@ fun SettingsScreen(
                         title = stringResource(R.string.mbti_title),
                         enabled = true,
                         badge = if (showMbtiBadge) stringResource(R.string.mbti_new_badge) else null,
-                        trailingText = personaName.ifEmpty { null },
+                        subtitle = personaName.ifEmpty { null },
+                        iconUrl = personaImageUrl.ifEmpty { null },
                         onClick = { openInAppBrowser(context, MbtiPreferences.QUIZ_URL) }
                     )
                 }
@@ -510,7 +515,8 @@ private fun SettingsRow(
     title: String,
     enabled: Boolean,
     badge: String? = null,
-    trailingText: String? = null,
+    subtitle: String? = null,
+    iconUrl: String? = null,
     onClick: () -> Unit
 ) {
     Row(
@@ -520,20 +526,29 @@ private fun SettingsRow(
             .padding(horizontal = 16.dp, vertical = 14.dp),
         verticalAlignment = Alignment.CenterVertically
     ) {
-        Icon(
-            icon,
-            contentDescription = null,
-            tint = if (enabled)
-                MaterialTheme.colorScheme.primary
-            else
-                MaterialTheme.colorScheme.outline,
-            modifier = Modifier.size(22.dp)
-        )
+        // A saved persona's art replaces the generic glyph — same pipeline
+        // (Coil) as Music-tab artwork, no retry wrapper needed the way iOS's
+        // AsyncImage did (Coil doesn't have that give-up-for-good bug).
+        if (iconUrl != null) {
+            AsyncImage(
+                model = iconUrl,
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.size(28.dp).clip(CircleShape)
+            )
+        } else {
+            Icon(
+                icon,
+                contentDescription = null,
+                tint = if (enabled)
+                    MaterialTheme.colorScheme.primary
+                else
+                    MaterialTheme.colorScheme.outline,
+                modifier = Modifier.size(22.dp)
+            )
+        }
         Spacer(Modifier.width(14.dp))
-        // Title and the optional pill share the middle. The pill is measured
-        // first, the title gets everything left (fill = false keeps the pill
-        // right after the text instead of pushed to the chevron).
-        Row(Modifier.weight(1f), verticalAlignment = Alignment.CenterVertically) {
+        Column(Modifier.weight(1f)) {
             Text(
                 title,
                 style = MaterialTheme.typography.bodyLarge,
@@ -541,32 +556,35 @@ private fun SettingsRow(
                     MaterialTheme.colorScheme.onSurface
                 else
                     MaterialTheme.colorScheme.outline,
-                modifier = Modifier.weight(1f, fill = false)
+                maxLines = 1
             )
             // A saved result takes priority over the "New" pill — once
             // someone's taken the quiz, the "hey, try this" prompt is moot.
-            if (trailingText != null) {
-                Spacer(Modifier.width(8.dp))
+            // On its own line under the title, not squeezed in next to the
+            // chevron, so a longer persona name reads as a real result.
+            if (subtitle != null) {
                 Text(
-                    trailingText,
+                    subtitle,
                     style = MaterialTheme.typography.bodyMedium,
                     color = MaterialTheme.colorScheme.onSurfaceVariant,
                     maxLines = 1
                 )
-            } else if (badge != null) {
-                Spacer(Modifier.width(8.dp))
-                Text(
-                    badge,
-                    modifier = Modifier
-                        .clip(RoundedCornerShape(50))
-                        .background(MaterialTheme.colorScheme.primary)
-                        .padding(horizontal = 7.dp, vertical = 3.dp),
-                    color = MaterialTheme.colorScheme.onPrimary,
-                    fontSize = 11.sp,
-                    fontWeight = FontWeight.Bold
-                )
             }
         }
+        if (subtitle == null && badge != null) {
+            Spacer(Modifier.width(8.dp))
+            Text(
+                badge,
+                modifier = Modifier
+                    .clip(RoundedCornerShape(50))
+                    .background(MaterialTheme.colorScheme.primary)
+                    .padding(horizontal = 7.dp, vertical = 3.dp),
+                color = MaterialTheme.colorScheme.onPrimary,
+                fontSize = 11.sp,
+                fontWeight = FontWeight.Bold
+            )
+        }
+        Spacer(Modifier.width(8.dp))
         Icon(
             Icons.AutoMirrored.Filled.KeyboardArrowRight,
             contentDescription = null,
