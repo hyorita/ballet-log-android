@@ -70,7 +70,7 @@ versionCode 21 / versionName 1.17. iOS 1.17(build 1) 동기화.
 
 ## 출시 전 확인
 
-- [x] **iOS 1.17이 App Store 심사를 통과했는지** — 확인 필요
+- [x] App Store·Google Play·원스토어 모두 제출 완료 (2026-11-11), 승인 대기 중
 - [x] release AAB/APK 빌드 — 2026-11-10 16:41, versionCode 21 확인
 - [x] 개인정보처리방침 URL — 변경 없음
 - [x] 데이터 세이프티 섹션 — 변경 없음 (앱이 새로 수집하는 데이터 없음)
